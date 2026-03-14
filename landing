@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFRA TERMINAL — Data Center Intelligence Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- D3 for accurate map projection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:     #05080f;
+      --ink2:    #090e1c;
+      --ink3:    #0d1528;
+      --border:  rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.12);
+      --border3: rgba(255,255,255,0.20);
+      --text:    #dde5f4;
+      --text2:   #8a9fc0;
+      --text3:   #3e5272;
+      --accent:  #2d7ff9;
+      --accent2: #06c8d4;
+      --accent3: #0fffa0;
+      --adim:    rgba(45,127,249,0.13);
+      --aglow:   rgba(45,127,249,0.4);
+      --amber:   #f5a623;
+      --shadow:  0 32px 80px rgba(0,0,0,0.65), 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 2px; }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(45,127,249,0.038) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,127,249,0.038) 1px, transparent 1px);
+      background-size: 58px 58px;
+    }
+    body::after {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0; height: 70vh;
+      pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse 90% 55% at 50% -10%, rgba(45,127,249,0.11) 0%, transparent 70%);
+    }
+
+    /* ── NAV ─────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: 60px;
+      display: flex; align-items: center; padding: 0 52px;
+      background: rgba(5,8,15,0.78);
+      backdrop-filter: blur(24px) saturate(1.6);
+      border-bottom: 1px solid var(--border2);
+    }
+    .nav-logo {
+      display: flex; align-items: center; gap: 11px;
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: 14px; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--text); text-decoration: none;
+    }
+    .nav-logo-mark {
+      width: 28px; height: 28px; border: 1.5px solid var(--accent);
+      display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .nav-logo-mark::before { content: ''; position: absolute; inset: 4px; background: var(--accent); opacity: .14; }
+    .nav-logo-mark svg { position: relative; z-index: 1; }
+    .nav-links { display: flex; align-items: center; gap: 32px; margin-left: 48px; }
+    .nav-links a { font-size: 13px; font-weight: 500; color: var(--text3); text-decoration: none; transition: color .15s; }
+    .nav-links a:hover { color: var(--text2); }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .btn-ghost { padding: 7px 18px; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+    .btn-ghost:hover { border-color: var(--border3); color: var(--text); }
+    .btn-accent { padding: 7px 20px; background: var(--accent); border: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; position: relative; overflow: hidden; }
+    .btn-accent::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,rgba(255,255,255,.12),transparent); }
+    .btn-accent:hover { background: #1a6ce8; box-shadow: 0 0 22px var(--aglow); }
+
+    /* ── HERO ────────────────────────────────── */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 120px 52px 80px; text-align: center;
+    }
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 5px;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 30px;
+      display: flex; align-items: center; gap: 14px;
+      animation: fadein .8s ease both;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: ''; width: 32px; height: 1px; background: var(--accent); opacity: .5; }
+    .hero-h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(46px, 7.5vw, 92px);
+      letter-spacing: -2px; line-height: .9;
+      color: #fff; text-transform: uppercase; margin-bottom: 26px;
+      animation: fadein .9s .1s ease both;
+    }
+    .hero-h1 .hl { color: var(--accent); position: relative; display: inline-block; }
+    .hero-h1 .hl::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+    .hero-sub { font-family: 'Syne', sans-serif; font-weight: 700; font-size: clamp(16px,2vw,20px); color: var(--text2); margin-bottom: 16px; animation: fadein 1s .2s ease both; }
+    .hero-desc { max-width: 520px; font-size: 15px; color: var(--text3); line-height: 1.8; margin-bottom: 50px; animation: fadein 1s .3s ease both; }
+    .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 80px; animation: fadein 1s .4s ease both; }
+    .btn-cta-primary { padding: 14px 38px; background: var(--accent); color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+    .btn-cta-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,rgba(255,255,255,.12),transparent); }
+    .btn-cta-primary:hover { background: #1a6ce8; box-shadow: 0 0 44px var(--aglow), 0 8px 28px rgba(0,0,0,.5); transform: translateY(-1px); }
+    .btn-cta-outline { padding: 14px 38px; background: transparent; color: var(--text); border: 1px solid var(--border2); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-cta-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── MAP CONTAINER ───────────────────────── */
+    .map-container {
+      width: 100%; max-width: 1080px; height: 420px;
+      border: 1px solid var(--border2);
+      background: #030609;
+      overflow: hidden; position: relative;
+      animation: fadein 1.2s .5s ease both;
+    }
+    .map-container::before {
+      content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        linear-gradient(to bottom, var(--ink) 0%, transparent 12%, transparent 88%, var(--ink) 100%),
+        linear-gradient(to right,  var(--ink) 0%, transparent 5%,  transparent 95%, var(--ink) 100%);
+    }
+    #world-map-svg {
+      width: 100%; height: 100%; display: block;
+    }
+
+    /* D3 map styles */
+    .graticule  { fill: none; stroke: #0a1422; stroke-width: .4; }
+    .sphere     { fill: #030609; }
+    .country    { fill: #0d1e35; stroke: #14293f; stroke-width: .4; transition: fill .2s; }
+    .country:hover { fill: #152840; }
+    .map-borders { fill: none; stroke: #0d1e30; stroke-width: .6; }
+
+    /* Hotspot markers */
+    .hotspot-pulse {
+      fill: none; stroke: rgba(45,127,249,0.35); stroke-width: 1;
+      animation: map-pulse 2.8s ease-out infinite;
+    }
+    .hotspot-dot {
+      fill: #2d7ff9;
+      filter: url(#map-glow);
+    }
+    .conn-line {
+      fill: none; stroke: rgba(45,127,249,0.16); stroke-width: .7;
+      stroke-dasharray: 5 5;
+    }
+
+    @keyframes map-pulse { 0% { r: 6; opacity: .7; } 100% { r: 22; opacity: 0; } }
+    @keyframes dash-anim { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -20; } }
+
+    /* ── STATS BAR ───────────────────────────── */
+    .stats-bar { display: flex; max-width: 680px; width: 100%; border: 1px solid var(--border2); margin: 0 auto 100px; position: relative; z-index: 1; animation: fadein 1s .6s ease both; }
+    .stat-cell { flex: 1; padding: 22px 24px; text-align: center; border-right: 1px solid var(--border2); }
+    .stat-cell:last-child { border-right: none; }
+    .stat-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 32px; color: var(--accent); letter-spacing: -1px; line-height: 1; margin-bottom: 5px; }
+    .stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 500; }
+
+    /* ── SECTION ─────────────────────────────── */
+    .section { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 52px 100px; width: 100%; }
+    .section-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3.5px; color: var(--accent3); text-transform: uppercase; margin-bottom: 14px; }
+    .section-h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(30px,4.5vw,52px); color: #fff; text-transform: uppercase; letter-spacing: -1px; line-height: .96; margin-bottom: 52px; }
+
+    /* ── FEATURES ────────────────────────────── */
+    .feat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--border2); }
+    .feat-card { background: var(--ink2); padding: 36px 32px; position: relative; overflow: hidden; transition: background .2s; }
+    .feat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); opacity: 0; transition: opacity .3s; }
+    .feat-card:hover { background: var(--ink3); }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 2.5px; margin-bottom: 18px; }
+    .feat-icon { font-size: 26px; margin-bottom: 16px; display: block; }
+    .feat-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 19px; color: #fff; margin-bottom: 10px; }
+    .feat-desc { font-size: 14px; color: var(--text2); line-height: 1.75; }
+
+    /* ── SOCIAL PROOF ────────────────────────── */
+    .proof-row { display: flex; gap: 1px; background: var(--border2); margin-bottom: 100px; }
+    .proof-card { flex: 1; background: var(--ink2); padding: 28px 24px; }
+    .proof-quote { font-size: 14px; color: var(--text2); line-height: 1.75; font-style: italic; margin-bottom: 18px; }
+    .proof-quote::before { content: '"'; color: var(--accent); font-style: normal; font-size: 18px; }
+    .proof-quote::after  { content: '"'; color: var(--accent); font-style: normal; font-size: 18px; }
+    .proof-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .proof-role { font-size: 11px; color: var(--text3); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+    /* ── PRICING ─────────────────────────────── */
+    .pricing-outer { display: flex; justify-content: center; padding: 0 52px 100px; position: relative; z-index: 1; }
+    .pricing-card { width: 100%; max-width: 520px; border: 1px solid var(--border2); background: var(--ink2); position: relative; overflow: hidden; }
+    .pricing-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3)); }
+    .pricing-card::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 60% at 50% 0%,rgba(45,127,249,0.07),transparent); }
+    .pricing-inner { padding: 46px; position: relative; z-index: 1; }
+    .pricing-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: var(--accent3); text-transform: uppercase; border: 1px solid rgba(15,255,160,.2); padding: 3px 10px; margin-bottom: 14px; }
+    .pricing-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 28px; }
+    .pricing-price { display: flex; align-items: baseline; gap: 7px; margin-bottom: 10px; }
+    .pricing-amount { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 68px; color: #fff; letter-spacing: -3px; line-height: 1; }
+    .pricing-period { font-size: 15px; color: var(--text2); }
+    .pricing-desc { font-size: 13px; color: var(--text3); margin-bottom: 32px; line-height: 1.65; }
+    .pricing-features { list-style: none; margin-bottom: 36px; display: flex; flex-direction: column; gap: 11px; }
+    .pricing-features li { display: flex; align-items: center; gap: 11px; font-size: 14px; color: var(--text2); }
+    .pricing-features li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); flex-shrink: 0; box-shadow: 0 0 8px rgba(15,255,160,.5); }
+    .btn-pricing { width: 100%; padding: 15px; background: var(--accent); color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+    .btn-pricing::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg,rgba(255,255,255,.12),transparent); }
+    .btn-pricing:hover { background: #1a6ce8; box-shadow: 0 0 36px var(--aglow); }
+    .pricing-foot { border-top: 1px solid var(--border); padding: 18px 46px; font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 9px; position: relative; z-index: 1; }
+
+    /* ── CTA BAND ────────────────────────────── */
+    .cta-band { position: relative; z-index: 1; border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); padding: 80px 52px; text-align: center; background: var(--ink2); overflow: hidden; }
+    .cta-band::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 70% 80% at 50% 50%,rgba(45,127,249,0.07),transparent); }
+    .cta-band-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(28px,4vw,46px); color: #fff; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 14px; position: relative; z-index: 1; }
+    .cta-band-sub { font-size: 15px; color: var(--text2); margin-bottom: 36px; position: relative; z-index: 1; }
+    .cta-band-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+
+    /* ── FOOTER ──────────────────────────────── */
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border2); padding: 28px 52px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--text2); display: flex; align-items: center; gap: 9px; }
+    .footer-copy { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a { font-size: 11px; color: var(--text3); text-decoration: none; font-family: 'DM Mono', monospace; letter-spacing: 1px; text-transform: uppercase; transition: color .14s; }
+    .footer-links a:hover { color: var(--text2); }
+
+    @keyframes fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero { padding: 100px 20px 60px; }
+      .map-container { height: 240px; }
+      .stats-bar { margin: 0 20px 72px; width: auto; }
+      .section { padding: 0 20px 72px; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .proof-row { flex-direction: column; }
+      .pricing-outer { padding: 0 20px 72px; }
+      .cta-band { padding: 56px 20px; }
+      footer { padding: 20px; flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <div class="nav-logo-mark">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" stroke="#2d7ff9" stroke-width="1.2"/>
+        <rect x="8" y="1" width="5" height="5" fill="#2d7ff9" opacity=".35"/>
+        <rect x="1" y="8" width="5" height="5" fill="#2d7ff9" opacity=".35"/>
+        <rect x="8" y="8" width="5" height="5" stroke="#2d7ff9" stroke-width="1.2"/>
+      </svg>
+    </div>
+    Infra Terminal
+  </a>
+  <div class="nav-links">
+    <a href="#features">Platform</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#">Docs</a>
+    <a href="#">About</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="console.log('login coming soon')">Log In</button>
+    <button class="btn-accent" onclick="console.log('signup coming soon')">Start Free Trial</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">Global Infrastructure Intelligence</div>
+  <h1 class="hero-h1">Plan <span class="hl">Hyperscale</span><br>Infrastructure</h1>
+  <p class="hero-sub">The operating system for data center development.</p>
+  <p class="hero-desc">Simulate locations, infrastructure cost, power markets, and ROI before you break ground. Built for hyperscale developers, sovereign funds, and infrastructure investors.</p>
+  <div class="hero-cta">
+    <button class="btn-cta-primary" onclick="console.log('signup coming soon')">Start Free Trial</button>
+    <button class="btn-cta-outline" onclick="console.log('login coming soon')">Log In →</button>
+  </div>
+
+  <!-- ACCURATE WORLD MAP -->
+  <div class="map-container">
+    <svg id="world-map-svg">
+      <defs>
+        <filter id="map-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="map-glow-sm" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+    </svg>
+  </div>
+</section>
+
+<!-- STATS -->
+<div style="position:relative;z-index:1;padding:0 52px;max-width:680px;margin:0 auto;">
+  <div class="stats-bar">
+    <div class="stat-cell"><div class="stat-num">47</div><div class="stat-lbl">Global Markets</div></div>
+    <div class="stat-cell"><div class="stat-num">$2.4T</div><div class="stat-lbl">Infrastructure Modeled</div></div>
+    <div class="stat-cell"><div class="stat-num">850+</div><div class="stat-lbl">MW Planned</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" id="features">
+  <div class="section-tag">// Platform Capabilities</div>
+  <div class="section-h2">Everything you need<br>to plan at scale</div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-num">01</div><span class="feat-icon">🌐</span>
+      <div class="feat-title">Site Intelligence</div>
+      <div class="feat-desc">Identify and evaluate hyperscale markets globally. Real-time power costs, land pricing, grid reliability, and competitive density for 47+ markets across every continent.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">02</div><span class="feat-icon">⚙️</span>
+      <div class="feat-title">Infrastructure Modeling</div>
+      <div class="feat-desc">Configure racks, chips, power, and cooling. Model NVIDIA H100, B200, GB300 NVL72, AMD MI300X, Google TPU v5p, AWS Trainium 2, and 4 more architectures.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">03</div><span class="feat-icon">📊</span>
+      <div class="feat-title">Financial Simulation</div>
+      <div class="feat-desc">Full CAPEX/OPEX breakdowns, revenue projections, and 10-year P&L models. Stress-test ROI across power cost and utilization scenarios instantly.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-num">04</div><span class="feat-icon">🏗️</span>
+      <div class="feat-title">3D Facility Visualization</div>
+      <div class="feat-desc">Generate real-time 3D facility layouts that scale to your rack count and MW capacity. Server halls, cooling, substations — rendered live and interactive.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF -->
+<div class="section" style="padding-top:0">
+  <div class="proof-row">
+    <div class="proof-card">
+      <div class="proof-quote">This is the first tool that lets us model a 500MW campus in Singapore versus Phoenix in under five minutes. The financial output is better than most consultant decks.</div>
+      <div class="proof-name">Marcus Okafor</div><div class="proof-role">VP Infrastructure · Sovereign Capital Group</div>
+    </div>
+    <div class="proof-card">
+      <div class="proof-quote">We used Infra Terminal to evaluate six European markets before deciding on Norway. The power cost and PUE modeling alone saved us six weeks of analyst time.</div>
+      <div class="proof-name">Ingrid Solberg</div><div class="proof-role">Director of Development · Nordic Edge DC</div>
+    </div>
+    <div class="proof-card">
+      <div class="proof-quote">The 3D facility generator is genuinely impressive. It turns a MW number into a building you can walk stakeholders through. Our board loves it.</div>
+      <div class="proof-name">James Whitfield</div><div class="proof-role">CTO · Helios Compute</div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div style="position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 52px;">
+  <div class="section-tag" id="pricing">// Pricing</div>
+  <div class="section-h2" style="margin-bottom:36px">One plan.<br>Unlimited access.</div>
+</div>
+<div class="pricing-outer">
+  <div class="pricing-card">
+    <div class="pricing-inner">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-name">Infrastructure Terminal</div>
+      <div class="pricing-price">
+        <div class="pricing-amount">$500</div>
+        <div class="pricing-period">/month<br><span style="font-size:12px;color:var(--text3)">billed monthly</span></div>
+      </div>
+      <div class="pricing-desc">Full platform access. Cancel anytime. Deployed to your team within minutes.</div>
+      <ul class="pricing-features">
+        <li>Unlimited infrastructure simulations</li>
+        <li>47+ global market intelligence datasets</li>
+        <li>Real-time financial modeling engine</li>
+        <li>3D facility visualization</li>
+        <li>Full chip architecture library (10 architectures)</li>
+        <li>Export reports &amp; simulation data</li>
+        <li>Priority support &amp; onboarding</li>
+      </ul>
+      <button class="btn-pricing" onclick="console.log('signup coming soon')">Start Subscription →</button>
+    </div>
+    <div class="pricing-foot">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0fffa0" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Secured by Stripe · Cancel anytime · No long-term contracts
+    </div>
+  </div>
+</div>
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <div class="cta-band-title">Ready to build at scale?</div>
+  <div class="cta-band-sub">Join infrastructure teams modeling the next generation of hyperscale sites.</div>
+  <div class="cta-band-btns">
+    <button class="btn-cta-primary" onclick="console.log('signup coming soon')">Start Free Trial</button>
+    <button class="btn-cta-outline" onclick="console.log('login coming soon')">Log In →</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+      <rect x="1" y="1" width="5" height="5" stroke="#3e5272" stroke-width="1.2"/>
+      <rect x="8" y="8" width="5" height="5" stroke="#3e5272" stroke-width="1.2"/>
+      <rect x="8" y="1" width="5" height="5" fill="#3e5272" opacity=".4"/>
+      <rect x="1" y="8" width="5" height="5" fill="#3e5272" opacity=".4"/>
+    </svg>
+    Infra Terminal
+  </div>
+  <div class="footer-copy">© 2025 INFRA TERMINAL // ALL RIGHTS RESERVED</div>
+  <div class="footer-links">
+    <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Docs</a><a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+// ── DC HOTSPOTS ─────────────────────────────────────────
+const HOTSPOTS = [
+  { name: 'N. Virginia',    lat: 38.9,   lon: -77.4,   r: 5,  tier: 1 },
+  { name: 'Silicon Valley', lat: 37.37,  lon: -121.97, r: 4,  tier: 1 },
+  { name: 'Dallas',         lat: 32.78,  lon: -96.8,   r: 3.5,tier: 1 },
+  { name: 'Phoenix',        lat: 33.43,  lon: -112.07, r: 4,  tier: 1 },
+  { name: 'Oregon',         lat: 45.52,  lon: -122.68, r: 3.5,tier: 1 },
+  { name: 'Seattle',        lat: 47.61,  lon: -122.33, r: 3,  tier: 2 },
+  { name: 'Chicago',        lat: 41.88,  lon: -87.63,  r: 3,  tier: 2 },
+  { name: 'London',         lat: 51.5,   lon: -0.12,   r: 4,  tier: 1 },
+  { name: 'Frankfurt',      lat: 50.11,  lon: 8.68,    r: 3.5,tier: 1 },
+  { name: 'Amsterdam',      lat: 52.37,  lon: 4.9,     r: 3,  tier: 1 },
+  { name: 'Dublin',         lat: 53.33,  lon: -6.25,   r: 3,  tier: 1 },
+  { name: 'Paris',          lat: 48.86,  lon: 2.35,    r: 3,  tier: 1 },
+  { name: 'Stockholm',      lat: 59.33,  lon: 18.07,   r: 2.5,tier: 2 },
+  { name: 'Norway',         lat: 63.43,  lon: 10.39,   r: 2.5,tier: 2 },
+  { name: 'Zurich',         lat: 47.38,  lon: 8.54,    r: 2.5,tier: 2 },
+  { name: 'Singapore',      lat: 1.35,   lon: 103.82,  r: 4,  tier: 1 },
+  { name: 'Tokyo',          lat: 35.68,  lon: 139.69,  r: 3.5,tier: 1 },
+  { name: 'Osaka',          lat: 34.69,  lon: 135.5,   r: 2.5,tier: 2 },
+  { name: 'Dubai',          lat: 25.2,   lon: 55.27,   r: 2.5,tier: 2 },
+  { name: 'Sydney',         lat: -33.87, lon: 151.2,   r: 2.5,tier: 2 },
+  { name: 'Mumbai',         lat: 19.08,  lon: 72.88,   r: 2.5,tier: 2 },
+  { name: 'Querétaro',      lat: 20.59,  lon: -100.39, r: 2.5,tier: 2 },
+  { name: 'São Paulo',      lat: -23.55, lon: -46.63,  r: 2.5,tier: 2 },
+  { name: 'Johannesburg',   lat: -26.2,  lon: 28.04,   r: 2,  tier: 3 },
+];
+
+// Connection pairs (index references)
+const CONNECTIONS = [
+  [0,1],[0,2],[0,3],[0,4],[0,7],  // NVA → US west + London
+  [7,8],[7,9],[7,10],[8,9],[8,14],// EU cluster
+  [1,15],[15,16],                  // SV → Singapore → Tokyo
+  [0,15],                          // NVA → Singapore
+  [7,18],[8,18],                   // EU → Dubai
+  [11,12],[11,13],                 // Paris → Nordics
+];
+
+// ── D3 MAP RENDERING ────────────────────────────────────
+async function initMap() {
+  const container = document.querySelector('.map-container');
+  const W = container.clientWidth;
+  const H = container.clientHeight;
+
+  const svg = d3.select('#world-map-svg')
+    .attr('width', W)
+    .attr('height', H);
+
+  // Natural Earth projection — most visually accurate for a world overview
+  const projection = d3.geoNaturalEarth1()
+    .scale(W / 6.0)
+    .translate([W / 2, H / 2 + 20]);
+
+  const path = d3.geoPath().projection(projection);
+
+  // Graticule (grid lines)
+  const graticule = d3.geoGraticule().step([30, 30]);
+
+  svg.append('path')
+    .datum({ type: 'Sphere' })
+    .attr('class', 'sphere')
+    .attr('d', path);
+
+  svg.append('path')
+    .datum(graticule())
+    .attr('class', 'graticule')
+    .attr('d', path);
+
+  // Load world GeoJSON from CDN (Natural Earth 110m)
+  try {
+    const world = await d3.json(
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+    );
+
+    const countries = topojson_feature(world, world.objects.countries);
+
+    svg.append('g')
+      .selectAll('path')
+      .data(countries.features)
+      .enter()
+      .append('path')
+      .attr('class', 'country')
+      .attr('d', path);
+
+    svg.append('path')
+      .datum(topojson_mesh(world, world.objects.countries, (a, b) => a !== b))
+      .attr('class', 'map-borders')
+      .attr('d', path);
+
+  } catch (e) {
+    console.warn('GeoJSON load failed, using fallback', e);
+    // Fallback: just show the sphere
+  }
+
+  // Connection lines
+  const connGroup = svg.append('g').attr('class', 'connections');
+  CONNECTIONS.forEach(([ai, bi], idx) => {
+    const a = HOTSPOTS[ai], b = HOTSPOTS[bi];
+    const pa = projection([a.lon, a.lat]);
+    const pb = projection([b.lon, b.lat]);
+    if (!pa || !pb) return;
+
+    const dur = (1.6 + (idx * 0.17) % 1.4).toFixed(2);
+    const line = connGroup.append('line')
+      .attr('class', 'conn-line')
+      .attr('x1', pa[0]).attr('y1', pa[1])
+      .attr('x2', pb[0]).attr('y2', pb[1])
+      .style('stroke-dashoffset', '0');
+
+    // Animate via JS
+    (function animLine(el, d) {
+      let offset = 0;
+      setInterval(() => {
+        offset -= 0.4;
+        el.style('stroke-dashoffset', offset.toString());
+      }, 30);
+    })(line, dur);
+  });
+
+  // Hotspot markers
+  const hsGroup = svg.append('g').attr('class', 'hotspots');
+  HOTSPOTS.forEach((h, i) => {
+    const p = projection([h.lon, h.lat]);
+    if (!p) return;
+
+    const g = hsGroup.append('g')
+      .attr('transform', `translate(${p[0]},${p[1]})`);
+
+    // Pulse ring — animated with CSS
+    const pulseR = h.r * 2.4;
+    const delay = (i * 0.28) % 3;
+    g.append('circle')
+      .attr('r', pulseR)
+      .attr('fill', 'none')
+      .attr('stroke', `rgba(45,127,249,${h.tier === 1 ? 0.38 : 0.22})`)
+      .attr('stroke-width', '.9')
+      .style('transform-origin', '0px 0px')
+      .style('animation', `map-pulse ${2.4 + i*0.15}s ${delay}s ease-out infinite`);
+
+    // Second pulse ring (offset)
+    g.append('circle')
+      .attr('r', pulseR * 0.6)
+      .attr('fill', 'none')
+      .attr('stroke', `rgba(45,127,249,${h.tier === 1 ? 0.25 : 0.14})`)
+      .attr('stroke-width', '.7')
+      .style('transform-origin', '0px 0px')
+      .style('animation', `map-pulse ${2.4 + i*0.15}s ${delay + 0.8}s ease-out infinite`);
+
+    // Center dot
+    g.append('circle')
+      .attr('r', h.r * 0.52)
+      .attr('fill', h.tier === 1 ? '#2d7ff9' : h.tier === 2 ? '#06c8d4' : '#4a5f7a')
+      .attr('opacity', .95)
+      .attr('filter', 'url(#map-glow)');
+  });
+
+  // Resize handler
+  window.addEventListener('resize', () => {
+    const nW = container.clientWidth;
+    const nH = container.clientHeight;
+    svg.attr('width', nW).attr('height', nH);
+    projection.scale(nW / 6.0).translate([nW / 2, nH / 2 + 20]);
+    svg.selectAll('path').attr('d', path);
+    // Re-project hotspots
+    hsGroup.selectAll('g').each(function(d, i) {
+      if (!HOTSPOTS[i]) return;
+      const p = projection([HOTSPOTS[i].lon, HOTSPOTS[i].lat]);
+      if (p) d3.select(this).attr('transform', `translate(${p[0]},${p[1]})`);
+    });
+  });
+}
+
+// ── TOPOJSON MINI HELPERS ────────────────────────────────
+// Inline just the two functions we need from topojson-client
+// so we don't need another CDN dependency
+
+function topojson_feature(topology, object) {
+  return object.type === "GeometryCollection"
+    ? { type: "FeatureCollection", features: object.geometries.map(o => topo_feat(topology, o)) }
+    : topo_feat(topology, object);
+}
+
+function topo_feat(topology, o) {
+  const id = o.id; const bbox = o.bbox;
+  const properties = o.properties == null ? {} : o.properties;
+  return { type: "Feature", id, bbox, properties, geometry: topo_geom(topology, o) };
+}
+
+function topojson_mesh(topology, object, filter) {
+  const geom = object.geometries;
+  const arcs = topology.arcs;
+  const coords = [];
+
+  function arc(i, points) {
+    if (i < 0) { i = ~i; }
+    const a = arcs[i]; let n = a.length; let x = 0, y = 0;
+    for (let j = 0; j < n; ++j) { x += a[j][0]; y += a[j][1]; points.push([x, y]); }
+  }
+
+  // simplified — just return empty for borders (they render from country paths)
+  return { type: "MultiLineString", coordinates: [] };
+}
+
+function topo_geom(topology, o) {
+  if (o == null) return null;
+  switch (o.type) {
+    case "GeometryCollection": return { type: "GeometryCollection", geometries: o.geometries.map(g => topo_geom(topology, g)) };
+    case "Point": return { type: "Point", coordinates: topo_point(topology, o.coordinates) };
+    case "MultiPoint": return { type: "MultiPoint", coordinates: o.coordinates.map(c => topo_point(topology, c)) };
+    case "LineString": return { type: "LineString", coordinates: topo_line(topology, o.arcs) };
+    case "MultiLineString": return { type: "MultiLineString", coordinates: o.arcs.map(a => topo_line(topology, a)) };
+    case "Polygon": return { type: "Polygon", coordinates: o.arcs.map(a => topo_ring(topology, a)) };
+    case "MultiPolygon": return { type: "MultiPolygon", coordinates: o.arcs.map(p => p.map(a => topo_ring(topology, a))) };
+    default: return null;
+  }
+}
+
+function topo_point(topology, point) {
+  const { transform } = topology;
+  if (!transform) return point.slice();
+  return [point[0] * transform.scale[0] + transform.translate[0],
+          point[1] * transform.scale[1] + transform.translate[1]];
+}
+
+function topo_line(topology, arcs) {
+  const coords = [];
+  arcs.forEach(i => {
+    const a = topology.arcs[i < 0 ? ~i : i];
+    const n = a.length; let x = 0, y = 0;
+    for (let j = 0; j < n; ++j) {
+      const pt = a[j]; x += pt[0]; y += pt[1];
+      if (j > 0 || i >= 0) coords.push(topo_transform(topology, x, y));
+    }
+    if (i < 0) coords.reverse();
+  });
+  return coords;
+}
+
+function topo_ring(topology, arcs) {
+  const coords = topo_line(topology, arcs);
+  if (coords.length > 0 && (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1])) {
+    coords.push(coords[0]);
+  }
+  return coords;
+}
+
+function topo_transform(topology, x, y) {
+  const { transform } = topology;
+  if (!transform) return [x, y];
+  return [x * transform.scale[0] + transform.translate[0],
+          y * transform.scale[1] + transform.translate[1]];
+}
+
+// ── BOOT ─────────────────────────────────────────────────
+// Use topojson from CDN for proper decoding
+(function loadTopoJSON() {
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js';
+  script.onload = () => {
+    // Override our mini helpers with the real library
+    window.topojson_feature = topojson.feature;
+    window.topojson_mesh    = topojson.mesh;
+    initMap();
+  };
+  script.onerror = () => {
+    // Fall back to our mini helpers
+    initMap();
+  };
+  document.head.appendChild(script);
+})();
+</script>
+</body>
+</html>
