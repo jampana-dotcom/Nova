@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataCenter Planner — Infrastructure Simulator</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --surface:rgba(14,20,32,0.92);
+  --surface2:rgba(18,26,42,0.96);
+  --surface-solid:#0e1420;
+  --border:rgba(255,255,255,0.07);
+  --border-bright:rgba(255,255,255,0.13);
+  --text:#e8edf5;
+  --text2:#94a3b8;
+  --text3:#4a5f7a;
+  --accent:#3b82f6;
+  --accent-dim:rgba(59,130,246,0.15);
+  --accent-glow:rgba(59,130,246,0.35);
+  --green:#10b981;
+  --green-dim:rgba(16,185,129,0.12);
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,0.12);
+  --amber:#f59e0b;
+  --amber-dim:rgba(245,158,11,0.12);
+  --shadow:0 24px 64px rgba(0,0,0,0.5),0 4px 16px rgba(0,0,0,0.3);
+  --r:14px;--rs:9px;
+}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+
+/* MAP */
+#map{position:fixed;inset:0;z-index:0;}
+.leaflet-container{background:#060c14!important;}
+
+/* Hide Leaflet attribution for cleaner look */
+.leaflet-control-attribution{display:none!important;}
+
+/* Custom scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:2px;}
+
+/* TOPBAR */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
+  background:rgba(8,14,24,0.88);
+  backdrop-filter:blur(24px) saturate(1.6);
+  border-bottom:1px solid var(--border-bright);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;color:var(--text);}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent-glow);}
+.tdiv{width:1px;height:20px;background:var(--border-bright);}
+.tstep{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .15s;}
+.tstep:hover{color:var(--text2);}
+.tstep.active{color:var(--accent);background:var(--accent-dim);}
+.tstep.done{color:var(--green);}
+.tstep .sn{width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.tstep.active .sn{background:var(--accent);color:#fff;}
+.tstep.done .sn{background:var(--green);color:#fff;}
+.tright{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.pill{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.pill-blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
+.pill-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,0.2);}
+.pill-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.2);}
+
+/* FLOATING PANEL */
+.fp{
+  position:fixed;z-index:500;
+  background:var(--surface);
+  backdrop-filter:blur(32px) saturate(1.5);
+  border:1px solid var(--border-bright);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.fp.hidden{opacity:0;pointer-events:none;transform:translateY(8px);}
+.fp-hd{
+  padding:13px 16px 11px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.fp-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.fp-title{font-weight:600;font-size:13px;color:var(--text);}
+.fp-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.fp-body{padding:12px 15px;overflow-y:auto;}
+
+/* SEARCH PANEL */
+#fp-search{top:62px;left:14px;width:282px;}
+.sbox{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);border-radius:var(--rs);padding:8px 11px;margin-bottom:11px;}
+.sbox input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;}
+.sbox input::placeholder{color:var(--text3);}
+.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;}
+.rlist{display:flex;flex-direction:column;gap:1px;max-height:420px;overflow-y:auto;}
+.ri{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .1s;}
+.ri:hover{background:rgba(255,255,255,0.05);}
+.ri.active{background:var(--accent-dim);}
+.rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.rname{font-size:12px;font-weight:500;flex:1;color:var(--text);}
+.rmeta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
+
+/* SITE PANEL */
+#fp-site{top:62px;left:14px;width:282px;max-height:calc(100vh - 78px);}
+.site-hero{height:78px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:11px 14px;}
+.site-hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f2444 0%,#1d4ed8 100%);}
+.site-hero-grid{position:absolute;inset:0;opacity:.08;background-image:linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px);background-size:20px 20px;}
+.site-nm{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;position:relative;z-index:1;}
+.site-co{font-size:10px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;position:relative;z-index:1;margin-top:1px;}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
+.sc{background:rgba(255,255,255,0.04);border-radius:8px;padding:9px 10px;border:1px solid var(--border);}
+.sclbl{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.scval{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;}
+.scval.bl{color:var(--accent);}.scval.gr{color:var(--green);}.scval.am{color:var(--amber);}.scval.rd{color:var(--red);}
+
+/* CONFIG PANEL */
+#fp-config{top:62px;right:14px;width:306px;max-height:calc(100vh - 78px);}
+.tabbar{display:flex;border-bottom:1px solid var(--border);margin:0 -15px 12px;padding:0 15px;}
+.tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;margin-bottom:-1px;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabpanel{display:none;}.tabpanel.active{display:block;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;}
+.cc{border:1px solid var(--border-bright);border-radius:8px;padding:9px;cursor:pointer;transition:all .14s;background:rgba(255,255,255,0.03);position:relative;}
+.cc:hover{border-color:var(--accent);background:var(--accent-dim);}
+.cc.sel{border-color:var(--accent);background:var(--accent-dim);}
+.cc.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;color:var(--accent);}
+.cbrand{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
+.cname{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.cspec{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.75;}
+.cspec span{color:var(--accent);}
+.slrow{margin-bottom:13px;}
+.slhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.sllbl{font-size:12px;font-weight:500;color:var(--text2);}
+.slval{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),rgba(255,255,255,0.1) var(--pct,50%),rgba(255,255,255,0.1) 100%);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 0 8px var(--accent-glow);cursor:pointer;}
+.btnp{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px;letter-spacing:.1px;}
+.btnp:hover{background:#2563eb;box-shadow:0 4px 16px var(--accent-glow);}
+.btns{width:100%;padding:9px;background:transparent;color:var(--accent);border:1px solid rgba(59,130,246,0.3);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;}
+.btns:hover{background:var(--accent-dim);}
+.rev-radios{display:flex;gap:10px;margin-bottom:12px;}
+.rev-radios label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;}
+.rev-radios input[type=radio]{accent-color:var(--accent);width:13px;height:13px;}
+
+/* 3D PANEL */
+#fp-3d{top:62px;left:50%;transform:translateX(-50%);width:560px;max-width:calc(100vw - 660px);}
+#fp-3d.hidden{transform:translateX(-50%) translateY(8px);}
+#tcwrap{height:295px;background:#060b14;position:relative;overflow:hidden;}
+#tcanvas{width:100%!important;height:100%!important;display:block;}
+.cvctrl{position:absolute;bottom:9px;right:9px;display:flex;gap:5px;}
+.cvbtn{background:rgba(255,255,255,0.07);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);border-radius:6px;padding:4px 9px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
+.cvbtn:hover{background:rgba(255,255,255,0.14);}
+.cvleg{position:absolute;top:9px;left:9px;display:flex;flex-direction:column;gap:4px;}
+.lgi{display:flex;align-items:center;gap:5px;}
+.lgd{width:8px;height:8px;border-radius:2px;}
+.lgl{font-size:10px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
+.fstats{display:flex;border-top:1px solid var(--border);}
+.fst{flex:1;padding:9px 12px;border-right:1px solid var(--border);text-align:center;}
+.fst:last-child{border-right:none;}
+.fstv{font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
+.fstl{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* FINANCE PANEL */
+#fp-fin{bottom:14px;left:50%;transform:translateX(-50%);width:860px;max-width:calc(100vw - 28px);}
+#fp-fin.hidden{transform:translateX(-50%) translateY(10px);}
+.finhdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.fingrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 15px;}
+.fm{text-align:center;padding:10px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);}
+.fml{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:500;}
+.fmv{font-size:17px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
+.fms{font-size:10px;color:var(--text3);margin-top:3px;}
+
+/* CUSTOM LEAFLET MARKERS */
+.hs-marker{
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;cursor:pointer;
+  transition:transform .15s;
+}
+.hs-marker:hover{transform:scale(1.25);}
+.hs-pulse{
+  position:absolute;border-radius:50%;
+  animation:hspulse 2.5s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes hspulse{
+  0%{transform:scale(1);opacity:.6;}
+  100%{transform:scale(2.8);opacity:0;}
+}
+
+/* Site pin marker */
+.site-marker{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--accent);
+  border:3px solid rgba(255,255,255,0.9);
+  box-shadow:0 0 0 3px var(--accent-glow),0 0 20px var(--accent-glow);
+}
+
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper{
+  background:var(--surface2)!important;
+  border:1px solid var(--border-bright)!important;
+  border-radius:10px!important;
+  box-shadow:var(--shadow)!important;
+  color:var(--text)!important;
+  padding:0!important;
+}
+.leaflet-popup-content{
+  margin:0!important;
+  font-family:'DM Sans',sans-serif!important;
+}
+.leaflet-popup-tip{background:var(--surface2)!important;}
+.leaflet-popup-close-button{color:var(--text3)!important;top:8px!important;right:10px!important;}
+
+/* Tooltip */
+#tip{position:fixed;background:var(--surface2);border:1px solid var(--border-bright);border-radius:8px;padding:7px 11px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:2000;opacity:0;transition:opacity .12s;max-width:200px;}
+#tip.show{opacity:1;}
+
+@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+.fi{animation:fi .25s ease forwards;}
+</style>
+</head>
+<body>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo"><div class="logo-dot"></div>DataCenter Planner</div>
+  <div class="tdiv"></div>
+  <div class="tstep active" id="ts1" onclick="goStep(1)"><div class="sn">1</div>Site Selection</div>
+  <div class="tstep" id="ts2" onclick="goStep(2)"><div class="sn">2</div>Configuration</div>
+  <div class="tstep" id="ts3" onclick="goStep(3)"><div class="sn">3</div>Facility View</div>
+  <div class="tstep" id="ts4" onclick="goStep(4)"><div class="sn">4</div>Financials</div>
+  <div class="tright">
+    <span class="pill pill-blue" id="tb-chip">Select a chip</span>
+    <span class="pill pill-amber" id="tb-cap">CAPEX: —</span>
+    <span class="pill pill-green" id="tb-roi">ROI: —</span>
+  </div>
+</div>
+
+<!-- SEARCH PANEL -->
+<div class="fp" id="fp-search">
+  <div class="fp-hd">
+    <div class="fp-ico" style="background:rgba(59,130,246,0.15)">🌍</div>
+    <div><div class="fp-title">Select Site</div><div class="fp-sub">Click the map or pick a market</div></div>
+  </div>
+  <div class="fp-body">
+    <div class="sbox">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Search location…" oninput="filterRegions(this.value)">
+    </div>
+    <div class="sec-lbl">Major DC Markets</div>
+    <div class="rlist" id="rlist"></div>
+  </div>
+</div>
+
+<!-- SITE PANEL -->
+<div class="fp hidden" id="fp-site">
+  <div class="site-hero">
+    <div class="site-hero-bg"></div>
+    <div class="site-hero-grid"></div>
+    <div><div class="site-nm" id="snm">—</div><div class="site-co" id="sco">—</div></div>
+  </div>
+  <div class="fp-body">
+    <div class="sgrid" id="sgrid"></div>
+    <button class="btnp" onclick="goStep(2)">Configure Data Center →</button>
+  </div>
+</div>
+
+<!-- CONFIG PANEL -->
+<div class="fp hidden" id="fp-config">
+  <div class="fp-hd">
+    <div class="fp-ico" style="background:rgba(16,185,129,0.15)">⚙️</div>
+    <div><div class="fp-title">Data Center Design</div><div class="fp-sub" id="cfg-sub">Configure hardware &amp; capacity</div></div>
+  </div>
+  <div class="fp-body" style="max-height:calc(100vh - 190px);overflow-y:auto;">
+    <div class="tabbar">
+      <div class="tab active" onclick="ctab('hw',this)">Hardware</div>
+      <div class="tab" onclick="ctab('cap',this)">Capacity</div>
+      <div class="tab" onclick="ctab('rev',this)">Revenue</div>
+    </div>
+
+    <!-- HARDWARE -->
+    <div class="tabpanel active" id="tp-hw">
+      <div class="sec-lbl">Chip Architecture</div>
+      <div class="cgrid" id="cgrid"></div>
+    </div>
+
+    <!-- CAPACITY -->
+    <div class="tabpanel" id="tp-cap">
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">IT Load Capacity</span><span class="slval" id="vmw">100 MW</span></div>
+        <input type="range" min="5" max="1000" value="100" step="5" id="slmw" oninput="sl(this,'vmw',v=>v+' MW','mw')">
+      </div>
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">Rack Density</span><span class="slval" id="vden">30 kW/rack</span></div>
+        <input type="range" min="5" max="120" value="30" step="5" id="slden" oninput="sl(this,'vden',v=>v+' kW/rack','density')">
+      </div>
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">Utilization Rate</span><span class="slval" id="vutil">75%</span></div>
+        <input type="range" min="20" max="95" value="75" id="slutil" oninput="sl(this,'vutil',v=>v+'%','util')">
+      </div>
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">Redundancy</span><span class="slval" id="vred">2N</span></div>
+        <input type="range" min="1" max="3" value="2" step="1" id="slred" oninput="slred(this)">
+      </div>
+    </div>
+
+    <!-- REVENUE -->
+    <div class="tabpanel" id="tp-rev">
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">GPU Rental ($/hr/chip)</span><span class="slval" id="vprice">$2.50</span></div>
+        <input type="range" min="0.5" max="10" value="2.5" step="0.1" id="slprice" oninput="sl(this,'vprice',v=>'$'+parseFloat(v).toFixed(2),'gpuPrice')">
+      </div>
+      <div class="slrow">
+        <div class="slhdr"><span class="sllbl">Colo Rate ($/rack/mo)</span><span class="slval" id="vcolo">$1,500</span></div>
+        <input type="range" min="500" max="6000" value="1500" step="100" id="slcolo" oninput="sl(this,'vcolo',v=>'$'+parseInt(v).toLocaleString(),'coloRate')">
+      </div>
+      <div class="sec-lbl" style="margin-top:4px">Revenue Mix</div>
+      <div class="rev-radios">
+        <label><input type="radio" name="rmx" value="gpu" checked onchange="S.revMix=this.value;recalc()"> GPU Cloud</label>
+        <label><input type="radio" name="rmx" value="colo" onchange="S.revMix=this.value;recalc()"> Colocation</label>
+        <label><input type="radio" name="rmx" value="mixed" onchange="S.revMix=this.value;recalc()"> Mixed</label>
+      </div>
+    </div>
+
+    <button class="btnp" onclick="buildFacility()">Generate Facility View →</button>
+    <button class="btns" onclick="goStep(1)">← Change Location</button>
+  </div>
+</div>
+
+<!-- 3D PANEL -->
+<div class="fp hidden" id="fp-3d">
+  <div class="fp-hd">
+    <div class="fp-ico" style="background:rgba(245,158,11,0.15)">🏗️</div>
+    <div><div class="fp-title">Facility Layout</div><div class="fp-sub" id="fsub">3D visualization — drag to orbit</div></div>
+  </div>
+  <div id="tcwrap">
+    <canvas id="tcanvas"></canvas>
+    <div class="cvleg" id="cvleg"></div>
+    <div class="cvctrl">
+      <button class="cvbtn" onclick="resetCam()">⟳ Reset</button>
+      <button class="cvbtn" onclick="toggleWF()">◻ Wire</button>
+    </div>
+  </div>
+  <div class="fstats" id="fstats"></div>
+</div>
+
+<!-- FINANCE PANEL -->
+<div class="fp hidden" id="fp-fin">
+  <div class="finhdr">
+    <div class="fp-ico" style="background:rgba(16,185,129,0.15)">📊</div>
+    <div style="flex:1"><div class="fp-title">Financial Summary</div><div class="fp-sub" id="finsub">—</div></div>
+    <div style="display:flex;gap:6px" id="finpills"></div>
+  </div>
+  <div class="fingrid" id="fingrid"></div>
+</div>
+
+<div id="tip"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// HOTSPOT & LOCATION DATA
+// ═══════════════════════════════════════════
+
+const HOTSPOTS=[
+  {id:'nva', name:'N. Virginia',    lat:38.9,  lng:-77.4,  tier:'T1', mw:8000, cnt:250},
+  {id:'sva', name:'Silicon Valley', lat:37.37, lng:-121.97,tier:'T1', mw:4000, cnt:120},
+  {id:'dal', name:'Dallas',         lat:32.78, lng:-96.8,  tier:'T1', mw:3500, cnt:90},
+  {id:'phx', name:'Phoenix',        lat:33.43, lng:-112.07,tier:'T1', mw:5000, cnt:110},
+  {id:'chi', name:'Chicago',        lat:41.88, lng:-87.63, tier:'T1', mw:2800, cnt:70},
+  {id:'lon', name:'London',         lat:51.5,  lng:-0.12,  tier:'T1', mw:2500, cnt:85},
+  {id:'fra', name:'Frankfurt',      lat:50.11, lng:8.68,   tier:'T1', mw:2200, cnt:75},
+  {id:'ams', name:'Amsterdam',      lat:52.37, lng:4.9,    tier:'T1', mw:2000, cnt:65},
+  {id:'dub', name:'Dublin',         lat:53.33, lng:-6.25,  tier:'T1', mw:1200, cnt:40},
+  {id:'sgp', name:'Singapore',      lat:1.35,  lng:103.82, tier:'T1', mw:1800, cnt:60},
+  {id:'tok', name:'Tokyo',          lat:35.68, lng:139.69, tier:'T1', mw:2000, cnt:55},
+  {id:'syd', name:'Sydney',         lat:-33.87,lng:151.2,  tier:'T2', mw:900,  cnt:30},
+  {id:'ore', name:'Oregon',         lat:45.52, lng:-122.68,tier:'T1', mw:3000, cnt:60},
+  {id:'dxb', name:'Dubai',          lat:25.2,  lng:55.27,  tier:'T2', mw:600,  cnt:20},
+  {id:'mex', name:'Querétaro',      lat:20.59, lng:-100.39,tier:'T2', mw:400,  cnt:15},
+  {id:'nor', name:'Norway',         lat:63.43, lng:10.39,  tier:'T2', mw:500,  cnt:12},
+  {id:'hyd', name:'Hyderabad',      lat:17.39, lng:78.49,  tier:'T2', mw:400,  cnt:18},
+  {id:'scl', name:'Santiago',       lat:-33.45,lng:-70.67, tier:'T2', mw:300,  cnt:10},
+  {id:'joh', name:'Johannesburg',   lat:-26.2, lng:28.04,  tier:'T3', mw:200,  cnt:8},
+  {id:'bom', name:'Mumbai',         lat:19.08, lng:72.88,  tier:'T2', mw:350,  cnt:14},
+  {id:'sea', name:'Seattle',        lat:47.61, lng:-122.33,tier:'T1', mw:1200, cnt:35},
+  {id:'par', name:'Paris',          lat:48.86, lng:2.35,   tier:'T1', mw:1500, cnt:45},
+  {id:'zur', name:'Zurich',         lat:47.38, lng:8.54,   tier:'T1', mw:600,  cnt:20},
+  {id:'sto', name:'Stockholm',      lat:59.33, lng:18.07,  tier:'T2', mw:700,  cnt:22},
+  {id:'osk', name:'Osaka',          lat:34.69, lng:135.5,  tier:'T2', mw:800,  cnt:18},
+];
+
+const BASE={
+  T1:{pc:.065,land:200000,build:10000000,tax:.21,pue:1.32,lab:1.1,ren:38,grid:99.97,conn:'Tier 1',perm:14},
+  T2:{pc:.075,land:80000, build:8000000, tax:.24,pue:1.45,lab:.80,ren:28,grid:99.9, conn:'Tier 2',perm:10},
+  T3:{pc:.09, land:40000, build:7000000, tax:.27,pue:1.60,lab:.50,ren:18,grid:99.5, conn:'Tier 3',perm:8},
+};
+const OV={
+  nva:{pc:.055,tax:.21,pue:1.35,ren:35,land:250000},
+  ore:{pc:.038,tax:.17,pue:1.25,ren:72,land:80000},
+  dub:{pc:.095,tax:.125,pue:1.22,ren:55,land:500000},
+  sgp:{pc:.12,tax:.17,pue:1.5,ren:5,land:2000000},
+  dxb:{pc:.04,tax:.09,pue:1.6,ren:10,land:600000},
+  mex:{pc:.062,tax:.30,pue:1.4,ren:25,land:50000},
+  nor:{pc:.028,tax:.22,pue:1.15,ren:98,land:90000},
+  hyd:{pc:.07,tax:.25,pue:1.55,ren:20,land:40000},
+  zur:{pc:.10,tax:.145,pue:1.25,ren:65,land:800000},
+  sto:{pc:.032,tax:.205,pue:1.18,ren:90,land:120000},
+  par:{pc:.09,tax:.25,pue:1.28,ren:50,land:450000},
+};
+
+const LOCS=HOTSPOTS.map(h=>{
+  const b=BASE[h.tier],o=OV[h.id]||{};
+  return{id:h.id,name:h.name,lat:h.lat,lng:h.lng,
+    powerCostKwh:o.pc||b.pc, landCostPerAcre:o.land||b.land,
+    constructionCostPerMW:b.build, taxRate:o.tax||b.tax,
+    pue:o.pue||b.pue, laborMult:b.lab,
+    waterCostM3:3.5, renewablesPct:o.ren||b.ren,
+    gridReliability:b.grid, permittingMonths:b.perm,
+    connectivity:b.conn, tier:h.tier,
+    existingMW:h.mw, dcCount:h.cnt};
+});
+
+const CHIPS=[
+  {id:'h100', brand:'NVIDIA', name:'H100 SXM5',   cost:30000,pwrKW:.70,tflops:3958,hbm:80,  gpr:8,  gen:'Hopper'},
+  {id:'b200', brand:'NVIDIA', name:'B200 SXM',    cost:70000,pwrKW:1.2, tflops:9000,hbm:192, gpr:8,  gen:'Blackwell'},
+  {id:'gb300',brand:'NVIDIA', name:'GB300 NVL72',  cost:90000,pwrKW:1.4, tflops:11500,hbm:288,gpr:72, gen:'Blackwell'},
+  {id:'mi300',brand:'AMD',    name:'MI300X',      cost:15000,pwrKW:.75,tflops:5220,hbm:192, gpr:8,  gen:'CDNA3'},
+  {id:'mi325',brand:'AMD',    name:'MI325X',      cost:18000,pwrKW:.80,tflops:6600,hbm:256, gpr:8,  gen:'CDNA3+'},
+  {id:'tpu5', brand:'Google', name:'TPU v5p',     cost:12000,pwrKW:.45,tflops:4594,hbm:95,  gpr:16, gen:'v5'},
+  {id:'tr2',  brand:'AWS',    name:'Trainium 2',  cost:10000,pwrKW:.60,tflops:3800,hbm:96,  gpr:16, gen:'TR2'},
+  {id:'g3',   brand:'Intel',  name:'Gaudi 3',     cost:8500, pwrKW:.90,tflops:5400,hbm:128, gpr:8,  gen:'Gaudi'},
+  {id:'a100', brand:'NVIDIA', name:'A100 SXM4',   cost:12000,pwrKW:.40,tflops:2496,hbm:80,  gpr:8,  gen:'Ampere'},
+  {id:'cpu',  brand:'Intel',  name:'Xeon CPU',    cost:8000, pwrKW:.25,tflops:50,  hbm:512, gpr:40, gen:'CPU'},
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+
+const S={step:1,loc:null,chip:CHIPS[0],mw:100,density:30,util:.75,redun:2,gpuPrice:2.5,coloRate:1500,revMix:'gpu'};
+
+// ═══════════════════════════════════════════
+// LEAFLET MAP
+// ═══════════════════════════════════════════
+
+let map, siteMarker=null;
+const hsMarkers={};
+
+function initMap(){
+  map=L.map('map',{
+    center:[20,10],
+    zoom:3,
+    minZoom:2,
+    maxZoom:18,
+    zoomControl:false,
+    attributionControl:false,
+  });
+
+  // CartoDB Dark Matter tiles
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    subdomains:'abcd',
+    maxZoom:19,
+  }).addTo(map);
+
+  // Zoom control bottom-right
+  L.control.zoom({position:'bottomright'}).addTo(map);
+
+  // Add hotspot markers
+  HOTSPOTS.forEach(addHotspotMarker);
+
+  // Click anywhere on map
+  map.on('click',onMapClick);
+}
+
+const TIER_COLOR={T1:'#f59e0b',T2:'#60a5fa',T3:'#6b7280'};
+const TIER_SIZE={T1:20,T2:14,T3:10};
+
+function addHotspotMarker(h){
+  const size=TIER_SIZE[h.tier];
+  const color=TIER_COLOR[h.tier];
+
+  const el=document.createElement('div');
+  el.style.cssText=`position:relative;width:${size}px;height:${size}px;`;
+
+  // pulse ring
+  const pulse=document.createElement('div');
+  pulse.className='hs-pulse';
+  pulse.style.cssText=`width:${size}px;height:${size}px;border:1.5px solid ${color};top:0;left:0;`;
+  el.appendChild(pulse);
+
+  // center dot
+  const dot=document.createElement('div');
+  dot.className='hs-marker';
+  dot.style.cssText=`width:${size}px;height:${size}px;background:${color}22;border:1.5px solid ${color};box-shadow:0 0 ${size}px ${color}66;`;
+  const inner=document.createElement('div');
+  inner.style.cssText=`width:${size*.38}px;height:${size*.38}px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};`;
+  dot.appendChild(inner);
+  el.appendChild(dot);
+
+  const marker=L.marker([h.lat,h.lng],{
+    icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]}),
+    zIndexOffset:100,
+  }).addTo(map);
+
+  marker.on('click',e=>{L.DomEvent.stopPropagation(e);selLocById(h.id);});
+  marker.on('mouseover',e=>{showPopup(e.latlng,h);});
+  marker.on('mouseout',()=>{map.closePopup();});
+
+  hsMarkers[h.id]=marker;
+}
+
+function showPopup(latlng,h){
+  const color=TIER_COLOR[h.tier];
+  L.popup({closeButton:false,offset:[0,-8],className:''})
+    .setLatLng(latlng)
+    .setContent(`
+      <div style="padding:10px 14px;min-width:160px">
+        <div style="font-weight:700;font-size:13px;color:#e8edf5;margin-bottom:5px">${h.name}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:${color}">${h.tier}</span>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:#94a3b8">${h.mw.toLocaleString()} MW</span>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:#94a3b8">${h.cnt} DCs</span>
+        </div>
+      </div>`)
+    .openOn(map);
+}
+
+function onMapClick(e){
+  // Check if near a hotspot
+  let closest=null,minDist=Infinity;
+  HOTSPOTS.forEach(h=>{
+    const d=map.distance([h.lat,h.lng],[e.latlng.lat,e.latlng.lng]);
+    if(d<80000&&d<minDist){minDist=d;closest=h;} // within ~80km
+  });
+  if(closest){selLocById(closest.id);}
+  else{selCustom(e.latlng.lat,e.latlng.lng);}
+}
+
+function placeSitePin(lat,lng){
+  if(siteMarker)map.removeLayer(siteMarker);
+  const el=document.createElement('div');
+  el.className='site-marker';
+  siteMarker=L.marker([lat,lng],{
+    icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[14,14],iconAnchor:[7,7]}),
+    zIndexOffset:1000,
+  }).addTo(map);
+}
+
+function selLocById(id){
+  const loc=LOCS.find(l=>l.id===id);
+  if(!loc)return;
+  S.loc=loc;
+  placeSitePin(loc.lat,loc.lng);
+  map.flyTo([loc.lat,loc.lng],8,{duration:1.2});
+  showSitePanel(loc);
+  document.querySelectorAll('.ri').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
+  recalc();
+}
+
+function selCustom(lat,lng){
+  S.loc=makeCustomLoc(lat,lng);
+  placeSitePin(lat,lng);
+  showSitePanel(S.loc);
+  document.querySelectorAll('.ri').forEach(el=>el.classList.remove('active'));
+  recalc();
+}
+
+function makeCustomLoc(lat,lng){
+  const al=Math.abs(lat);
+  let pc=.07,land=80000,build=8500000,tax=.25,pue=1.45,lab=.8,ren=25,grid=99.7,conn='Tier 3',perm=16;
+  if(lng>-10&&lng<40&&lat>35){pc=.085;land=200000;build=9500000;tax=.22;pue=1.3;lab=1.1;ren=45;grid=99.9;conn='Tier 2';}
+  else if(lng>-130&&lng<-60&&lat>25&&lat<55){pc=.06;land=150000;build=9000000;tax=.21;pue=1.38;lab=1.0;ren=30;grid=99.9;conn='Tier 2';}
+  else if(lng>100&&lat>-10&&lat<40){pc=.09;land=200000;build=9000000;tax=.20;pue=1.5;lab=.7;ren=20;grid=99.7;conn='Tier 2';}
+  if(al>55){pue=Math.max(1.15,pue-.2);pc=Math.max(.03,pc-.025);ren=Math.min(95,ren+30);}
+  const names={europe:'European Site',namerica:'N. American Site',apac:'Asia-Pacific Site',meast:'Middle East Site',other:'Custom Site'};
+  const region=lng>-10&&lng<40&&lat>35?'europe':lng>-130&&lng<-60&&lat>25&&lat<55?'namerica':lng>100&&lat>-10&&lat<40?'apac':lng>30&&lng<60&&lat>15&&lat<40?'meast':'other';
+  return{id:'custom',name:names[region],lat,lng,powerCostKwh:+pc.toFixed(3),landCostPerAcre:land,constructionCostPerMW:build,taxRate:tax,pue,laborMult:lab,waterCostM3:3,renewablesPct:ren,gridReliability:grid,permittingMonths:perm,connectivity:conn,tier:'T3',existingMW:0,dcCount:0};
+}
+
+// ═══════════════════════════════════════════
+// REGION LIST
+// ═══════════════════════════════════════════
+
+function initRegionList(){renderRL(LOCS);}
+function renderRL(locs){
+  document.getElementById('rlist').innerHTML=locs.map(l=>`
+    <div class="ri fi" data-id="${l.id}" onclick="selLocById('${l.id}')">
+      <div class="rdot" style="background:${TIER_COLOR[l.tier]}"></div>
+      <div class="rname">${l.name}</div>
+      <div class="rmeta">$${(l.powerCostKwh*100).toFixed(1)}¢/kWh</div>
+    </div>`).join('');
+}
+function filterRegions(q){renderRL(LOCS.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())));}
+
+// ═══════════════════════════════════════════
+// SITE PANEL
+// ═══════════════════════════════════════════
+
+function showSitePanel(loc){
+  document.getElementById('fp-search').classList.add('hidden');
+  document.getElementById('fp-site').classList.remove('hidden');
+  document.getElementById('snm').textContent=loc.name;
+  document.getElementById('sco').textContent=`${loc.lat.toFixed(3)}°, ${loc.lng.toFixed(3)}°`;
+  const rc=loc.pue<1.25?'gr':loc.pue<1.4?'bl':loc.pue<1.55?'am':'rd';
+  document.getElementById('sgrid').innerHTML=`
+    <div class="sc"><div class="sclbl">Power Cost</div><div class="scval bl">$${loc.powerCostKwh.toFixed(3)}/kWh</div></div>
+    <div class="sc"><div class="sclbl">Land / acre</div><div class="scval">${fmt(loc.landCostPerAcre)}</div></div>
+    <div class="sc"><div class="sclbl">PUE</div><div class="scval ${rc}">${loc.pue}</div></div>
+    <div class="sc"><div class="sclbl">Corp Tax</div><div class="scval">${(loc.taxRate*100).toFixed(1)}%</div></div>
+    <div class="sc"><div class="sclbl">Renewables</div><div class="scval ${loc.renewablesPct>50?'gr':'am'}">${loc.renewablesPct}%</div></div>
+    <div class="sc"><div class="sclbl">Grid SLA</div><div class="scval ${loc.gridReliability>99.9?'gr':''}">${loc.gridReliability}%</div></div>
+    <div class="sc"><div class="sclbl">Permit</div><div class="scval">${loc.permittingMonths} mo</div></div>
+    <div class="sc"><div class="sclbl">Connectivity</div><div class="scval bl">${loc.connectivity}</div></div>`;
+  markDone(1);
+}
+
+// ═══════════════════════════════════════════
+// CHIP GRID
+// ═══════════════════════════════════════════
+
+function initChipGrid(){
+  document.getElementById('cgrid').innerHTML=CHIPS.map(c=>`
+    <div class="cc ${c.id===S.chip.id?'sel':''}" onclick="selChip('${c.id}')">
+      <div class="cbrand">${c.brand}</div>
+      <div class="cname">${c.name}</div>
+      <div class="cspec">$<span>${(c.cost/1000).toFixed(0)}K</span>/unit</div>
+      <div class="cspec"><span>${(c.tflops/1000).toFixed(1)}</span> PF · <span>${c.pwrKW}</span> kW</div>
+    </div>`).join('');
+}
+function selChip(id){S.chip=CHIPS.find(c=>c.id===id);initChipGrid();recalc();updateTB();}
+
+// ═══════════════════════════════════════════
+// SLIDERS
+// ═══════════════════════════════════════════
+
+function sl(el,vid,fmt2,key){
+  document.getElementById(vid).textContent=fmt2(el.value);
+  el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
+  if(key==='mw')S.mw=+el.value;
+  else if(key==='density')S.density=+el.value;
+  else if(key==='util')S.util=+el.value/100;
+  else if(key==='gpuPrice')S.gpuPrice=+el.value;
+  else if(key==='coloRate')S.coloRate=+el.value;
+  recalc();
+}
+function slred(el){
+  document.getElementById('vred').textContent={1:'N+1',2:'2N',3:'2N+1'}[el.value];
+  el.style.setProperty('--pct',((el.value-1)/2*100)+'%');
+  S.redun=+el.value;recalc();
+}
+function initSliders(){
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
+  });
+}
+
+// ═══════════════════════════════════════════
+// FINANCIALS
+// ═══════════════════════════════════════════
+
+function calcF(){
+  const loc=S.loc;if(!loc)return null;
+  const{chip,mw,util,redun,gpuPrice,coloRate,revMix}=S;
+  const totalKW=mw*1000, facKW=totalKW*loc.pue;
+  const nChips=Math.floor(totalKW/chip.pwrKW);
+  const nRacks=Math.ceil(nChips/chip.gpr);
+  const acres=Math.max(1,Math.ceil(mw*.5+nRacks*.008));
+  const rdm={1:1.15,2:1.30,3:1.45}[redun];
+  const cChip=nChips*chip.cost;
+  const cBuild=mw*loc.constructionCostPerMW*loc.laborMult*rdm;
+  const cLand=acres*loc.landCostPerAcre;
+  const cPwr=mw*1600000*rdm;
+  const cCool=mw*900000;
+  const cNet=nRacks*18000;
+  const cMisc=(cBuild+cChip)*.08;
+  const capex=cChip+cBuild+cLand+cPwr+cCool+cNet+cMisc;
+  const oPwr=facKW*8760*loc.powerCostKwh;
+  const oLab=nRacks*600*loc.laborMult;
+  const oWat=mw*1200*loc.waterCostM3;
+  const oNet=nRacks*2200;
+  const oMnt=capex*.025;
+  const oIns=capex*.008;
+  const opex=oPwr+oLab+oWat+oNet+oMnt+oIns;
+  const gRev=nChips*8760*util*gpuPrice;
+  const cRev=nRacks*coloRate*12;
+  const rev=revMix==='gpu'?gRev:revMix==='colo'?cRev:gRev*.6+cRev*.4;
+  const ebitda=rev-opex,depr=capex/7,ebit=ebitda-depr;
+  const tax=Math.max(0,ebit*loc.taxRate),ni=ebit-tax;
+  const roi=capex>0?(ni/capex)*100:0;
+  const pb=ni>0?capex/ni:null;
+  const margin=rev>0?ebitda/rev*100:0;
+  return{nChips,nRacks,acres,capex,opex,rev,ebitda,ni,roi,pb,margin,
+    yr5:Math.max(0,ni*5-capex),yr10:Math.max(0,ni*10-capex),mw,
+    cChip,cBuild,cLand,cPwr,cCool,cNet,cMisc};
+}
+
+function recalc(){
+  const f=calcF();if(!f)return;
+  renderFinance(f);updateTB(f);
+  if(S.step>=3)renderFacStats(f);
+}
+
+function fmt(n){
+  if(n===null||isNaN(n))return'—';
+  const a=Math.abs(n),s=n<0?'-':'';
+  if(a>=1e9)return s+'$'+(a/1e9).toFixed(2)+'B';
+  if(a>=1e6)return s+'$'+(a/1e6).toFixed(1)+'M';
+  if(a>=1e3)return s+'$'+(a/1e3).toFixed(0)+'K';
+  return s+'$'+a.toFixed(0);
+}
+function fmtN(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':n.toLocaleString();}
+
+function renderFinance(f){
+  const p=f.ni>0;
+  const rc=f.roi>15?'var(--green)':f.roi>5?'var(--accent)':f.roi>0?'var(--amber)':'var(--red)';
+  document.getElementById('fingrid').innerHTML=`
+    <div class="fm"><div class="fml">Total CAPEX</div><div class="fmv" style="color:var(--amber)">${fmt(f.capex)}</div><div class="fms">${fmt(f.capex/f.mw)}/MW</div></div>
+    <div class="fm"><div class="fml">Annual Revenue</div><div class="fmv" style="color:var(--green)">${fmt(f.rev)}</div><div class="fms">${fmt(f.rev/12)}/mo</div></div>
+    <div class="fm"><div class="fml">Net Income / yr</div><div class="fmv" style="color:${p?'var(--green)':'var(--red)'}">${fmt(f.ni)}</div><div class="fms">EBITDA ${f.margin.toFixed(0)}%</div></div>
+    <div class="fm"><div class="fml">ROI (unlevered)</div><div class="fmv" style="color:${rc}">${f.roi.toFixed(1)}%</div><div class="fms">${f.pb?f.pb.toFixed(1)+' yr payback':'No payback'}</div></div>
+    <div class="fm"><div class="fml">10-yr Profit</div><div class="fmv" style="color:${f.yr10>0?'var(--green)':'var(--red)'}">${fmt(f.yr10)}</div><div class="fms">5-yr: ${fmt(f.yr5)}</div></div>`;
+  document.getElementById('finsub').textContent=`${fmtN(f.nChips)} chips · ${fmtN(f.nRacks)} racks · ${f.mw} MW`;
+  document.getElementById('finpills').innerHTML=`
+    <span class="pill ${p?'pill-green':'pill-red'}">${p?'PROFITABLE':'LOSS-MAKING'}</span>
+    <span class="pill pill-blue">${f.pb?f.pb.toFixed(1)+'yr payback':'No payback'}</span>`;
+}
+
+function updateTB(f){
+  document.getElementById('tb-chip').textContent=S.chip.name;
+  if(f){
+    document.getElementById('tb-cap').textContent='CAPEX: '+fmt(f.capex);
+    const el=document.getElementById('tb-roi');
+    el.textContent='ROI: '+f.roi.toFixed(1)+'%';
+    el.className='pill '+(f.roi>10?'pill-green':f.roi>0?'pill-amber':'pill-red');
+  }
+}
+
+// ═══════════════════════════════════════════
+// THREE.JS 3D
+// ═══════════════════════════════════════════
+
+let R,SC,CAM,drag=false,lmx=0,lmy=0,theta=.55,phi=1.05,camR=110,wf=false;
+const meshes=[];
+
+function initThree(){
+  const canvas=document.getElementById('tcanvas');
+  const wrap=document.getElementById('tcwrap');
+  R=new THREE.WebGLRenderer({canvas,antialias:true});
+  R.setPixelRatio(Math.min(devicePixelRatio,2));
+  R.shadowMap.enabled=true;
+  R.setSize(wrap.clientWidth,wrap.clientHeight);
+
+  SC=new THREE.Scene();
+  SC.background=new THREE.Color(0x060b14);
+  SC.fog=new THREE.FogExp2(0x060b14,.007);
+
+  CAM=new THREE.PerspectiveCamera(42,wrap.clientWidth/wrap.clientHeight,.1,1000);
+  moveCam();
+
+  SC.add(new THREE.AmbientLight(0x2a3d5a,1));
+  const dl=new THREE.DirectionalLight(0x8ab4d4,1.4);
+  dl.position.set(60,80,50);dl.castShadow=true;SC.add(dl);
+  SC.add(Object.assign(new THREE.PointLight(0x3b82f6,3,90),{position:new THREE.Vector3(0,22,0)}));
+  SC.add(Object.assign(new THREE.PointLight(0x10b981,1.5,60),{position:new THREE.Vector3(20,10,-20)}));
+
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshLambertMaterial({color:0x08111e}));
+  gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;SC.add(gnd);
+  SC.add(new THREE.GridHelper(400,60,0x162a40,0x101e2e));
+
+  wrap.addEventListener('mousedown',e=>{drag=true;lmx=e.clientX;lmy=e.clientY;});
+  window.addEventListener('mouseup',()=>drag=false);
+  window.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    theta-=(e.clientX-lmx)*.008;
+    phi=Math.max(.25,Math.min(1.45,phi-(e.clientY-lmy)*.005));
+    lmx=e.clientX;lmy=e.clientY;moveCam();
+  });
+  wrap.addEventListener('wheel',e=>{camR=Math.max(35,Math.min(280,camR+e.deltaY*.12));moveCam();});
+  (function anim(){requestAnimationFrame(anim);R.render(SC,CAM);})();
+}
+
+function moveCam(){
+  if(!CAM)return;
+  CAM.position.set(camR*Math.sin(phi)*Math.sin(theta),camR*Math.cos(phi),camR*Math.sin(phi)*Math.cos(theta));
+  CAM.lookAt(0,4,0);
+}
+
+function buildScene(f){
+  meshes.forEach(m=>SC.remove(m));meshes.length=0;
+  const nH=Math.max(1,Math.min(8,Math.ceil(f.nRacks/1000)));
+  const rpH=Math.ceil(f.nRacks/nH);
+  const hW=26,hD=56,hH=9,gap=7,totW=nH*(hW+gap)-gap,ox=-totW/2;
+
+  const mk=(geo,col,cast=true)=>{const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));if(cast)m.castShadow=true;m.receiveShadow=true;return m;};
+
+  for(let i=0;i<nH;i++){
+    const hx=ox+i*(hW+gap)+hW/2;
+    const g=new THREE.Group();
+    const body=mk(new THREE.BoxGeometry(hW,hH,hD),0x162a42);body.position.set(0,hH/2,0);g.add(body);
+    const roof=mk(new THREE.BoxGeometry(hW+.6,.7,hD+.6),0x0f1e30);roof.position.set(0,hH+.35,0);g.add(roof);
+    // Windows strip
+    const win=mk(new THREE.BoxGeometry(hW-.5,.8,hD-.5),0x1a3a5c,false);win.position.set(0,hH*.6,0);g.add(win);
+    const cols=Math.min(7,Math.ceil(Math.sqrt(rpH)));
+    const rows=Math.min(7,Math.ceil(rpH/cols));
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      const rk=mk(new THREE.BoxGeometry(1.1,6.2,1.2),0x0d3265);
+      rk.position.set(-(cols*1.55)/2+c*1.55+.775,3.1,-(rows*1.85)/2+r*1.85+.925);g.add(rk);
+      const led=new THREE.Mesh(new THREE.BoxGeometry(.055,6,.04),new THREE.MeshBasicMaterial({color:0x00aaff}));
+      led.position.set(-(cols*1.55)/2+c*1.55+1.325,3.1,-(rows*1.85)/2+r*1.85+.925+.62);g.add(led);
+    }
+    g.position.set(hx,0,0);SC.add(g);meshes.push(g);
+  }
+
+  // Cooling towers
+  const cc=Math.max(2,Math.ceil(nH*1.6));
+  for(let i=0;i<cc;i++){
+    const cx=ox+(i/(cc-1||1))*totW;
+    const tower=mk(new THREE.BoxGeometry(7,6,5),0x0a3020);
+    tower.position.set(cx,3,hD/2+5);SC.add(tower);meshes.push(tower);
+    const fan=mk(new THREE.CylinderGeometry(2,2,.6,10),0x071a10);
+    fan.position.set(cx,6.3,hD/2+5);SC.add(fan);meshes.push(fan);
+    const steam=mk(new THREE.CylinderGeometry(.3,1,3,8),0x0d2a18,false);
+    steam.position.set(cx,8,hD/2+5);SC.add(steam);meshes.push(steam);
+  }
+
+  // Substation
+  const sub=mk(new THREE.BoxGeometry(20,8,12),0x2a1800);sub.position.set(ox-18,4,0);SC.add(sub);meshes.push(sub);
+  for(let i=0;i<4;i++){
+    const t=mk(new THREE.CylinderGeometry(1.2,1.3,4,8),0x3d2500);
+    t.position.set(ox-18+(i-1.5)*4.5,4.5,-7.5);SC.add(t);meshes.push(t);
+  }
+  // HV lines (poles)
+  for(let i=0;i<3;i++){
+    const pole=mk(new THREE.CylinderGeometry(.2,.2,12,6),0x1a1200);
+    pole.position.set(ox-32+i*8,6,0);SC.add(pole);meshes.push(pole);
+  }
+
+  // Admin block
+  const adm=mk(new THREE.BoxGeometry(18,7,14),0x141e28);
+  adm.position.set(totW/2-ox+14,3.5,-hD/2-9);SC.add(adm);meshes.push(adm);
+  const admRoof=mk(new THREE.BoxGeometry(19,.8,15),0x0e1820);
+  admRoof.position.set(totW/2-ox+14,7.4,-hD/2-9);SC.add(admRoof);meshes.push(admRoof);
+
+  // Roads
+  const road1=new THREE.Mesh(new THREE.PlaneGeometry(totW+80,7),new THREE.MeshLambertMaterial({color:0x08101a}));
+  road1.rotation.x=-Math.PI/2;road1.position.set(0,.02,hD/2+13);SC.add(road1);meshes.push(road1);
+
+  document.getElementById('cvleg').innerHTML=`
+    <div class="lgi"><div class="lgd" style="background:#162a42"></div><span class="lgl">Server Halls</span></div>
+    <div class="lgi"><div class="lgd" style="background:#0a3020"></div><span class="lgl">Cooling</span></div>
+    <div class="lgi"><div class="lgd" style="background:#2a1800"></div><span class="lgl">Substation</span></div>
+    <div class="lgi"><div class="lgd" style="background:#141e28"></div><span class="lgl">Admin</span></div>`;
+  renderFacStats(f);
+}
+
+function renderFacStats(f){
+  document.getElementById('fstats').innerHTML=`
+    <div class="fst"><div class="fstv">${fmtN(f.nChips)}</div><div class="fstl">Chips</div></div>
+    <div class="fst"><div class="fstv">${fmtN(f.nRacks)}</div><div class="fstl">Racks</div></div>
+    <div class="fst"><div class="fstv">${f.mw} MW</div><div class="fstl">IT Load</div></div>
+    <div class="fst"><div class="fstv">${f.acres} ac</div><div class="fstl">Land</div></div>`;
+}
+
+function buildFacility(){
+  const f=calcF();if(!f)return;
+  markDone(2);goStep(3);
+  document.getElementById('fsub').textContent=`${fmtN(f.nRacks)} racks · ${f.mw}MW · ${S.chip.name} — drag to orbit`;
+  setTimeout(()=>{if(!R)initThree();buildScene(f);},80);
+}
+function resetCam(){theta=.55;phi=1.05;camR=110;moveCam();}
+function toggleWF(){wf=!wf;SC.traverse(o=>{if(o.isMesh&&o.material)o.material.wireframe=wf;});}
+
+// ═══════════════════════════════════════════
+// STEP FLOW
+// ═══════════════════════════════════════════
+
+function goStep(n){
+  S.step=n;
+  for(let i=1;i<=4;i++)document.getElementById('ts'+i).classList.toggle('active',i===n);
+  document.getElementById('fp-search').classList.toggle('hidden',n!==1||!!S.loc);
+  document.getElementById('fp-site').classList.toggle('hidden',!S.loc||n>2);
+  document.getElementById('fp-config').classList.toggle('hidden',n<2);
+  document.getElementById('fp-3d').classList.toggle('hidden',n<3);
+  document.getElementById('fp-fin').classList.toggle('hidden',n<2);
+  if(n>=2){markDone(1);const f=calcF();if(f)renderFinance(f);}
+  if(n>=3&&!R){setTimeout(()=>{initThree();const f=calcF();if(f)buildScene(f);},80);}
+  if(n>=4)markDone(3);
+}
+function markDone(n){document.getElementById('ts'+n)?.classList.add('done');}
+function ctab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tp-'+tab).classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  initRegionList();
+  initChipGrid();
+  initSliders();
+  goStep(1);
+  updateTB();
+});
+</script>
+</body>
+</html>
