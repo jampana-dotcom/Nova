@@ -1,245 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DataCenter Planner — Infrastructure Simulator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFRA TERMINAL — Data Center Intelligence Platform</title>
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Three.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
-<!-- Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --surface:rgba(14,20,32,0.92);
-  --surface2:rgba(18,26,42,0.96);
-  --surface-solid:#0e1420;
-  --border:rgba(255,255,255,0.07);
-  --border-bright:rgba(255,255,255,0.13);
-  --text:#e8edf5;
-  --text2:#94a3b8;
-  --text3:#4a5f7a;
-  --accent:#3b82f6;
-  --accent-dim:rgba(59,130,246,0.15);
-  --accent-glow:rgba(59,130,246,0.35);
-  --green:#10b981;
-  --green-dim:rgba(16,185,129,0.12);
-  --red:#ef4444;
-  --red-dim:rgba(239,68,68,0.12);
-  --amber:#f59e0b;
-  --amber-dim:rgba(245,158,11,0.12);
-  --shadow:0 24px 64px rgba(0,0,0,0.5),0 4px 16px rgba(0,0,0,0.3);
-  --r:14px;--rs:9px;
-}
-html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);}
+    :root {
+      --ink: #060912;
+      --ink2: #0b1120;
+      --ink3: #111a2e;
+      --surface: rgba(11,17,32,0.94);
+      --surface2: rgba(18,26,42,0.97);
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --border3: rgba(255,255,255,0.22);
+      --text: #e8edf5;
+      --text2: #94a3b8;
+      --text3: #4a5f7a;
+      --accent: #3b82f6;
+      --accent-dim: rgba(59,130,246,0.14);
+      --accent-glow: rgba(59,130,246,0.35);
+      --green: #10b981;
+      --green-dim: rgba(16,185,129,0.12);
+      --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.12);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --shadow: 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.3);
+      --r: 12px; --rs: 8px;
+    }
 
-/* MAP */
-#map{position:fixed;inset:0;z-index:0;}
-.leaflet-container{background:#060c14!important;}
+    html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* Hide Leaflet attribution for cleaner look */
-.leaflet-control-attribution{display:none!important;}
+    /* ── LANDING PAGE ───────────────────────────────────── */
+    #view-landing {
+      position: fixed; inset: 0; z-index: 3000;
+      background: var(--ink);
+      overflow-y: auto; overflow-x: hidden;
+      display: flex; flex-direction: column;
+    }
 
-/* Custom scrollbar */
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:2px;}
+    /* grid texture */
+    #view-landing::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.045) 1px, transparent 1px);
+      background-size: 56px 56px;
+    }
+    /* radial glow top */
+    #view-landing::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse 80% 55% at 50% 0%, rgba(59,130,246,0.09) 0%, transparent 70%);
+    }
 
-/* TOPBAR */
-#topbar{
-  position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
-  background:rgba(8,14,24,0.88);
-  backdrop-filter:blur(24px) saturate(1.6);
-  border-bottom:1px solid var(--border-bright);
-  display:flex;align-items:center;padding:0 16px;gap:12px;
-}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;letter-spacing:-.4px;display:flex;align-items:center;gap:8px;color:var(--text);}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent-glow);}
-.tdiv{width:1px;height:20px;background:var(--border-bright);}
-.tstep{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text3);padding:4px 10px;border-radius:20px;cursor:pointer;transition:all .15s;}
-.tstep:hover{color:var(--text2);}
-.tstep.active{color:var(--accent);background:var(--accent-dim);}
-.tstep.done{color:var(--green);}
-.tstep .sn{width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
-.tstep.active .sn{background:var(--accent);color:#fff;}
-.tstep.done .sn{background:var(--green);color:#fff;}
-.tright{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.pill{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:20px;white-space:nowrap;}
-.pill-blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
-.pill-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,0.2);}
-.pill-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
-.pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.2);}
+    /* LANDING NAV */
+    .lnav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; padding: 0 48px; height: 58px;
+      background: rgba(6,9,18,0.82); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border2); flex-shrink: 0;
+    }
+    .lnav-logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px;
+      letter-spacing: 2px; color: var(--text); text-transform: uppercase;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .lnav-logo-mark {
+      width: 26px; height: 26px; border: 1.5px solid var(--accent);
+      display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .lnav-logo-mark::before { content: ''; position: absolute; inset: 3px; background: var(--accent); opacity: .12; }
+    .lnav-logo-mark svg { position: relative; z-index: 1; }
+    .lnav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
-/* FLOATING PANEL */
-.fp{
-  position:fixed;z-index:500;
-  background:var(--surface);
-  backdrop-filter:blur(32px) saturate(1.5);
-  border:1px solid var(--border-bright);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
-  overflow:hidden;
-  transition:opacity .2s ease,transform .2s ease;
-}
-.fp.hidden{opacity:0;pointer-events:none;transform:translateY(8px);}
-.fp-hd{
-  padding:13px 16px 11px;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;
-}
-.fp-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
-.fp-title{font-weight:600;font-size:13px;color:var(--text);}
-.fp-sub{font-size:11px;color:var(--text3);margin-top:1px;}
-.fp-body{padding:12px 15px;overflow-y:auto;}
+    /* HERO */
+    .hero {
+      position: relative; z-index: 1;
+      min-height: 92vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 80px 48px 60px; text-align: center;
+    }
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 4px;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: ''; width: 28px; height: 1px; background: var(--accent); opacity: .5; }
+    .hero-h1 {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(44px, 7vw, 84px); letter-spacing: -1.5px; line-height: .94;
+      color: #fff; margin-bottom: 22px; text-transform: uppercase;
+    }
+    .hero-h1 em { font-style: normal; color: var(--accent); position: relative; }
+    .hero-h1 em::after {
+      content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), #06b6d4);
+    }
+    .hero-sub {
+      font-family: 'Syne', sans-serif; font-weight: 400;
+      font-size: clamp(16px, 2.2vw, 20px); color: var(--text2); margin-bottom: 14px; letter-spacing: .3px;
+    }
+    .hero-desc {
+      max-width: 520px; font-size: 15px; color: var(--text3); line-height: 1.75; margin-bottom: 44px;
+    }
+    .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 72px; }
 
-/* SEARCH PANEL */
-#fp-search{top:62px;left:14px;width:282px;}
-.sbox{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.04);border:1px solid var(--border-bright);border-radius:var(--rs);padding:8px 11px;margin-bottom:11px;}
-.sbox input{flex:1;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);outline:none;}
-.sbox input::placeholder{color:var(--text3);}
-.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;}
-.rlist{display:flex;flex-direction:column;gap:1px;max-height:420px;overflow-y:auto;}
-.ri{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:8px;cursor:pointer;transition:background .1s;}
-.ri:hover{background:rgba(255,255,255,0.05);}
-.ri.active{background:var(--accent-dim);}
-.rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.rname{font-size:12px;font-weight:500;flex:1;color:var(--text);}
-.rmeta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;}
+    /* Animated SVG map */
+    #hero-map {
+      width: 100%; max-width: 1060px; height: 380px;
+      border: 1px solid var(--border2); background: var(--ink2);
+      overflow: hidden; margin: 0 auto; position: relative;
+    }
+    #hero-map::before {
+      content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        linear-gradient(to bottom, var(--ink) 0%, transparent 14%, transparent 86%, var(--ink) 100%),
+        linear-gradient(to right,  var(--ink) 0%, transparent 8%,  transparent 92%, var(--ink) 100%);
+    }
+    #hero-svg { width: 100%; height: 100%; }
+    .h-ocean { fill: #060d1a; }
+    .h-land  { fill: #0d1e33; stroke: #152840; stroke-width: .4; }
+    .h-grat  { stroke: #0c1828; stroke-width: .3; fill: none; }
 
-/* SITE PANEL */
-#fp-site{top:62px;left:14px;width:282px;max-height:calc(100vh - 78px);}
-.site-hero{height:78px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:11px 14px;}
-.site-hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#0f2444 0%,#1d4ed8 100%);}
-.site-hero-grid{position:absolute;inset:0;opacity:.08;background-image:linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px);background-size:20px 20px;}
-.site-nm{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;position:relative;z-index:1;}
-.site-co{font-size:10px;color:rgba(255,255,255,.5);font-family:'DM Mono',monospace;position:relative;z-index:1;margin-top:1px;}
-.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
-.sc{background:rgba(255,255,255,0.04);border-radius:8px;padding:9px 10px;border:1px solid var(--border);}
-.sclbl{font-size:9px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
-.scval{font-size:13px;font-weight:700;font-family:'DM Mono',monospace;}
-.scval.bl{color:var(--accent);}.scval.gr{color:var(--green);}.scval.am{color:var(--amber);}.scval.rd{color:var(--red);}
+    /* STATS BAR */
+    .stats-bar {
+      display: flex; border: 1px solid var(--border2);
+      max-width: 640px; margin: 0 auto 72px; position: relative; z-index: 1;
+    }
+    .stat-item { flex: 1; padding: 20px 22px; text-align: center; border-right: 1px solid var(--border2); }
+    .stat-item:last-child { border-right: none; }
+    .stat-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 30px; color: var(--accent); letter-spacing: -1px; line-height: 1; margin-bottom: 4px; }
+    .stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; font-weight: 500; }
 
-/* CONFIG PANEL */
-#fp-config{top:62px;right:14px;width:306px;max-height:calc(100vh - 78px);}
-.tabbar{display:flex;border-bottom:1px solid var(--border);margin:0 -15px 12px;padding:0 15px;}
-.tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;margin-bottom:-1px;white-space:nowrap;}
-.tab:hover{color:var(--text2);}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-.tabpanel{display:none;}.tabpanel.active{display:block;}
-.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;}
-.cc{border:1px solid var(--border-bright);border-radius:8px;padding:9px;cursor:pointer;transition:all .14s;background:rgba(255,255,255,0.03);position:relative;}
-.cc:hover{border-color:var(--accent);background:var(--accent-dim);}
-.cc.sel{border-color:var(--accent);background:var(--accent-dim);}
-.cc.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;color:var(--accent);}
-.cbrand{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
-.cname{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
-.cspec{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.75;}
-.cspec span{color:var(--accent);}
-.slrow{margin-bottom:13px;}
-.slhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.sllbl{font-size:12px;font-weight:500;color:var(--text2);}
-.slval{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
-input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),rgba(255,255,255,0.1) var(--pct,50%),rgba(255,255,255,0.1) 100%);border-radius:2px;outline:none;cursor:pointer;}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 0 8px var(--accent-glow);cursor:pointer;}
-.btnp{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px;letter-spacing:.1px;}
-.btnp:hover{background:#2563eb;box-shadow:0 4px 16px var(--accent-glow);}
-.btns{width:100%;padding:9px;background:transparent;color:var(--accent);border:1px solid rgba(59,130,246,0.3);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;}
-.btns:hover{background:var(--accent-dim);}
-.rev-radios{display:flex;gap:10px;margin-bottom:12px;}
-.rev-radios label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;}
-.rev-radios input[type=radio]{accent-color:var(--accent);width:13px;height:13px;}
+    /* FEATURES */
+    .landing-section { position: relative; z-index: 1; padding: 0 48px 80px; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .section-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #10d9a0; text-transform: uppercase; margin-bottom: 12px; }
+    .section-h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(28px, 4vw, 44px); color: #fff; text-transform: uppercase; letter-spacing: -.5px; margin-bottom: 40px; line-height: 1; }
+    .feat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--border2); }
+    .feat-card { background: var(--ink2); padding: 32px 28px; transition: background .2s; position: relative; overflow: hidden; }
+    .feat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity .3s; }
+    .feat-card:hover { background: var(--ink3); }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-num { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 2px; margin-bottom: 16px; }
+    .feat-icon { font-size: 24px; margin-bottom: 14px; }
+    .feat-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; color: #fff; margin-bottom: 8px; }
+    .feat-desc { font-size: 13px; color: var(--text2); line-height: 1.75; }
 
-/* 3D PANEL */
-#fp-3d{top:62px;left:50%;transform:translateX(-50%);width:560px;max-width:calc(100vw - 660px);}
-#fp-3d.hidden{transform:translateX(-50%) translateY(8px);}
-#tcwrap{height:295px;background:#060b14;position:relative;overflow:hidden;}
-#tcanvas{width:100%!important;height:100%!important;display:block;}
-.cvctrl{position:absolute;bottom:9px;right:9px;display:flex;gap:5px;}
-.cvbtn{background:rgba(255,255,255,0.07);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);border-radius:6px;padding:4px 9px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
-.cvbtn:hover{background:rgba(255,255,255,0.14);}
-.cvleg{position:absolute;top:9px;left:9px;display:flex;flex-direction:column;gap:4px;}
-.lgi{display:flex;align-items:center;gap:5px;}
-.lgd{width:8px;height:8px;border-radius:2px;}
-.lgl{font-size:10px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
-.fstats{display:flex;border-top:1px solid var(--border);}
-.fst{flex:1;padding:9px 12px;border-right:1px solid var(--border);text-align:center;}
-.fst:last-child{border-right:none;}
-.fstv{font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
-.fstl{font-size:10px;color:var(--text3);margin-top:2px;}
+    /* PRICING */
+    .pricing-wrap { display: flex; justify-content: center; padding: 0 48px 100px; position: relative; z-index: 1; }
+    .pricing-card { width: 100%; max-width: 500px; border: 1px solid var(--border2); background: var(--ink2); position: relative; overflow: hidden; }
+    .pricing-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), #06b6d4, #10d9a0); }
+    .pricing-inner { padding: 40px; }
+    .pricing-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+    .pricing-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; color: #fff; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 24px; }
+    .pricing-price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+    .pricing-price-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 60px; color: #fff; letter-spacing: -2px; line-height: 1; }
+    .pricing-price-meta { font-size: 14px; color: var(--text2); }
+    .pricing-desc { font-size: 13px; color: var(--text3); margin-bottom: 28px; line-height: 1.65; }
+    .pricing-features { list-style: none; margin-bottom: 32px; display: flex; flex-direction: column; gap: 9px; }
+    .pricing-features li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); }
+    .pricing-features li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #10d9a0; flex-shrink: 0; box-shadow: 0 0 6px rgba(16,217,160,.4); }
+    .pricing-foot { border-top: 1px solid var(--border); padding: 18px 40px; background: rgba(59,130,246,0.03); font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
 
-/* FINANCE PANEL */
-#fp-fin{bottom:14px;left:50%;transform:translateX(-50%);width:860px;max-width:calc(100vw - 28px);}
-#fp-fin.hidden{transform:translateX(-50%) translateY(10px);}
-.finhdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
-.fingrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 15px;}
-.fm{text-align:center;padding:10px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);}
-.fml{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:500;}
-.fmv{font-size:17px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
-.fms{font-size:10px;color:var(--text3);margin-top:3px;}
+    /* FOOTER */
+    .lfoot { position: relative; z-index: 1; border-top: 1px solid var(--border2); padding: 24px 48px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .lfoot-copy { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
 
-/* CUSTOM LEAFLET MARKERS */
-.hs-marker{
-  display:flex;align-items:center;justify-content:center;
-  border-radius:50%;cursor:pointer;
-  transition:transform .15s;
-}
-.hs-marker:hover{transform:scale(1.25);}
-.hs-pulse{
-  position:absolute;border-radius:50%;
-  animation:hspulse 2.5s ease-out infinite;
-  pointer-events:none;
-}
-@keyframes hspulse{
-  0%{transform:scale(1);opacity:.6;}
-  100%{transform:scale(2.8);opacity:0;}
-}
+    /* BUTTONS */
+    .btn-primary {
+      padding: 12px 32px; background: var(--accent); color: #fff; border: none;
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: all .18s; position: relative; overflow: hidden;
+    }
+    .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.1), transparent); }
+    .btn-primary:hover { background: #2563eb; box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-1px); }
+    .btn-outline {
+      padding: 12px 32px; background: transparent; color: var(--text);
+      border: 1px solid var(--border2);
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: all .18s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-ghost-sm { padding: 6px 16px; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .14s; }
+    .btn-ghost-sm:hover { border-color: var(--border3); color: var(--text); }
+    .btn-accent-sm { padding: 6px 16px; background: var(--accent); border: none; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .14s; }
+    .btn-accent-sm:hover { background: #2563eb; }
+    .btn-pricing { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .18s; position: relative; overflow: hidden; }
+    .btn-pricing::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,.1), transparent); }
+    .btn-pricing:hover { background: #2563eb; box-shadow: 0 0 32px var(--accent-glow); }
 
-/* Site pin marker */
-.site-marker{
-  width:14px;height:14px;border-radius:50%;
-  background:var(--accent);
-  border:3px solid rgba(255,255,255,0.9);
-  box-shadow:0 0 0 3px var(--accent-glow),0 0 20px var(--accent-glow);
-}
+    /* ── SIMULATOR / APP UI ──────────────────────── */
+    #map { position: fixed; inset: 0; z-index: 0; }
+    .leaflet-container { background: #060c14 !important; }
+    .leaflet-control-attribution { display: none !important; }
 
-/* Leaflet popup override */
-.leaflet-popup-content-wrapper{
-  background:var(--surface2)!important;
-  border:1px solid var(--border-bright)!important;
-  border-radius:10px!important;
-  box-shadow:var(--shadow)!important;
-  color:var(--text)!important;
-  padding:0!important;
-}
-.leaflet-popup-content{
-  margin:0!important;
-  font-family:'DM Sans',sans-serif!important;
-}
-.leaflet-popup-tip{background:var(--surface2)!important;}
-.leaflet-popup-close-button{color:var(--text3)!important;top:8px!important;right:10px!important;}
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 52px; z-index: 1000;
+      background: rgba(8,14,24,0.9); backdrop-filter: blur(24px) saturate(1.6);
+      border-bottom: 1px solid var(--border2);
+      display: flex; align-items: center; padding: 0 16px; gap: 12px;
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    #topbar.visible { opacity: 1; pointer-events: all; }
 
-/* Tooltip */
-#tip{position:fixed;background:var(--surface2);border:1px solid var(--border-bright);border-radius:8px;padding:7px 11px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:none;z-index:2000;opacity:0;transition:opacity .12s;max-width:200px;}
-#tip.show{opacity:1;}
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -.4px; display: flex; align-items: center; gap: 8px; color: var(--text); }
+    .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+    .tdiv { width: 1px; height: 20px; background: var(--border2); }
+    .tstep { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text3); padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: all .15s; }
+    .tstep:hover { color: var(--text2); }
+    .tstep.active { color: var(--accent); background: var(--accent-dim); }
+    .tstep.done { color: var(--green); }
+    .tstep .sn { width: 17px; height: 17px; border-radius: 50%; background: rgba(255,255,255,.06); color: var(--text3); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .tstep.active .sn { background: var(--accent); color: #fff; }
+    .tstep.done .sn { background: var(--green); color: #fff; }
+    .tright { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .pill { font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .pill-blue  { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(59,130,246,.2); }
+    .pill-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,.2); }
+    .pill-red   { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,.2); }
+    .pill-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,.2); }
 
-@keyframes fi{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
-.fi{animation:fi .25s ease forwards;}
-</style>
+    /* Floating panels */
+    .fp { position: fixed; z-index: 500; background: var(--surface); backdrop-filter: blur(28px) saturate(1.5); border: 1px solid var(--border2); border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden; transition: opacity .2s, transform .2s; }
+    .fp.hidden { opacity: 0; pointer-events: none; transform: translateY(8px); }
+    .fp-hd { padding: 12px 15px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+    .fp-ico { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .fp-title { font-weight: 600; font-size: 13px; color: var(--text); }
+    .fp-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .fp-body { padding: 12px 14px; overflow-y: auto; }
+
+    #fp-search { top: 62px; left: 14px; width: 278px; }
+    .sbox { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.03); border: 1px solid var(--border2); border-radius: var(--rs); padding: 7px 11px; margin-bottom: 10px; }
+    .sbox input { flex: 1; border: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); outline: none; }
+    .sbox input::placeholder { color: var(--text3); }
+    .sec-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text3); margin-bottom: 7px; }
+    .rlist { display: flex; flex-direction: column; gap: 1px; max-height: 400px; overflow-y: auto; }
+    .ri { display: flex; align-items: center; gap: 9px; padding: 6px 7px; border-radius: 7px; cursor: pointer; transition: background .1s; }
+    .ri:hover { background: rgba(255,255,255,.04); }
+    .ri.active { background: var(--accent-dim); }
+    .rdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .rname { font-size: 12px; font-weight: 500; flex: 1; color: var(--text); }
+    .rmeta { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+    #fp-site { top: 62px; left: 14px; width: 278px; max-height: calc(100vh - 78px); }
+    .site-hero { height: 72px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 10px 13px; }
+    .site-hero-bg { position: absolute; inset: 0; background: linear-gradient(135deg,#0f2444,#1d4ed8); }
+    .site-hero-grid { position: absolute; inset: 0; opacity: .07; background-image: linear-gradient(rgba(255,255,255,.8) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.8) 1px,transparent 1px); background-size: 18px 18px; }
+    .site-nm { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; color: #fff; position: relative; z-index: 1; }
+    .site-co { font-size: 10px; color: rgba(255,255,255,.45); font-family: 'DM Mono', monospace; position: relative; z-index: 1; margin-top: 1px; }
+    .sgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 11px; }
+    .sc { background: rgba(255,255,255,.03); border-radius: 7px; padding: 8px 9px; border: 1px solid var(--border); }
+    .sclbl { font-size: 9px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .scval { font-size: 12px; font-weight: 700; font-family: 'DM Mono', monospace; }
+    .scval.bl { color: var(--accent); } .scval.gr { color: var(--green); } .scval.am { color: var(--amber); } .scval.rd { color: var(--red); }
+
+    #fp-config { top: 62px; right: 14px; width: 300px; max-height: calc(100vh - 78px); }
+    .tabbar { display: flex; border-bottom: 1px solid var(--border); margin: 0 -14px 11px; padding: 0 14px; }
+    .tab { padding: 7px 9px; font-size: 11px; font-weight: 500; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .13s; margin-bottom: -1px; white-space: nowrap; }
+    .tab:hover { color: var(--text2); } .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tabpanel { display: none; } .tabpanel.active { display: block; }
+    .cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 11px; }
+    .cc { border: 1px solid var(--border2); border-radius: 7px; padding: 9px; cursor: pointer; transition: all .13s; background: rgba(255,255,255,.02); position: relative; }
+    .cc:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .cc.sel { border-color: var(--accent); background: var(--accent-dim); }
+    .cc.sel::after { content: '✓'; position: absolute; top: 5px; right: 7px; font-size: 9px; font-weight: 700; color: var(--accent); }
+    .cbrand { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .cname { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 4px; line-height: 1.25; }
+    .cspec { font-size: 10px; color: var(--text2); font-family: 'DM Mono', monospace; line-height: 1.7; }
+    .cspec span { color: var(--accent); }
+    .slrow { margin-bottom: 12px; }
+    .slhdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+    .sllbl { font-size: 12px; font-weight: 500; color: var(--text2); }
+    .slval { font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+    input[type=range] { width: 100%; height: 3px; -webkit-appearance: none; appearance: none; background: linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),rgba(255,255,255,.08) var(--pct,50%),rgba(255,255,255,.08) 100%); border-radius: 2px; outline: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 0 8px var(--accent-glow); cursor: pointer; }
+    .btnp { width: 100%; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: var(--rs); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .14s; margin-top: 4px; }
+    .btnp:hover { background: #2563eb; box-shadow: 0 4px 14px var(--accent-glow); }
+    .btns { width: 100%; padding: 9px; background: transparent; color: var(--accent); border: 1px solid rgba(59,130,246,.28); border-radius: var(--rs); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .14s; margin-top: 5px; }
+    .btns:hover { background: var(--accent-dim); }
+    .rev-radios { display: flex; gap: 10px; margin-bottom: 12px; }
+    .rev-radios label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); cursor: pointer; }
+    .rev-radios input[type=radio] { accent-color: var(--accent); }
+
+    #fp-3d { top: 62px; left: 50%; transform: translateX(-50%); width: 540px; max-width: calc(100vw - 640px); }
+    #fp-3d.hidden { transform: translateX(-50%) translateY(8px); }
+    #tcwrap { height: 285px; background: #050a12; position: relative; overflow: hidden; }
+    #tcanvas { width: 100% !important; height: 100% !important; display: block; }
+    .cvctrl { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; }
+    .cvbtn { background: rgba(255,255,255,.07); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.75); border-radius: 6px; padding: 4px 9px; font-size: 11px; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: all .14s; }
+    .cvbtn:hover { background: rgba(255,255,255,.14); }
+    .cvleg { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .lgi { display: flex; align-items: center; gap: 5px; }
+    .lgd { width: 7px; height: 7px; border-radius: 2px; }
+    .lgl { font-size: 9px; color: rgba(255,255,255,.4); font-family: 'DM Mono', monospace; }
+    .fstats { display: flex; border-top: 1px solid var(--border); }
+    .fst { flex: 1; padding: 8px 12px; border-right: 1px solid var(--border); text-align: center; }
+    .fst:last-child { border-right: none; }
+    .fstv { font-size: 13px; font-weight: 700; font-family: 'DM Mono', monospace; color: var(--accent); }
+    .fstl { font-size: 9px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+    #fp-fin { bottom: 14px; left: 50%; transform: translateX(-50%); width: 860px; max-width: calc(100vw - 28px); }
+    #fp-fin.hidden { transform: translateX(-50%) translateY(10px); }
+    .finhdr { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+    .fingrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; padding: 12px 14px; }
+    .fm { text-align: center; padding: 10px 8px; border-radius: 7px; background: rgba(255,255,255,.03); border: 1px solid var(--border); }
+    .fml { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; font-weight: 500; }
+    .fmv { font-size: 16px; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; }
+    .fms { font-size: 9px; color: var(--text3); margin-top: 3px; }
+
+    /* Hotspot markers */
+    .hs-pulse { position: absolute; border-radius: 50%; animation: hspulse 2.5s ease-out infinite; pointer-events: none; }
+    @keyframes hspulse { 0% { transform: scale(1); opacity: .65; } 100% { transform: scale(2.8); opacity: 0; } }
+    .site-marker { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: 2.5px solid rgba(255,255,255,.9); box-shadow: 0 0 0 3px var(--accent-glow), 0 0 18px var(--accent-glow); }
+    .leaflet-popup-content-wrapper { background: var(--surface2) !important; border: 1px solid var(--border2) !important; border-radius: 10px !important; box-shadow: var(--shadow) !important; color: var(--text) !important; padding: 0 !important; }
+    .leaflet-popup-content { margin: 0 !important; font-family: 'DM Sans', sans-serif !important; }
+    .leaflet-popup-tip { background: var(--surface2) !important; }
+    .leaflet-popup-close-button { color: var(--text3) !important; top: 8px !important; right: 10px !important; }
+
+    /* Auth panel */
+    #auth-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 4000; width: 400px; max-width: calc(100vw - 32px); display: none; }
+    .auth-card { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--r); padding: 32px; box-shadow: var(--shadow); position: relative; }
+    .auth-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); }
+    .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); z-index: 3999; display: none; }
+    .auth-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: #fff; margin-bottom: 6px; text-transform: uppercase; }
+    .auth-sub { font-size: 13px; color: var(--text3); margin-bottom: 24px; line-height: 1.5; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+    .form-input { width: 100%; padding: 10px 13px; background: rgba(255,255,255,.04); border: 1px solid var(--border2); border-radius: var(--rs); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .14s; }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    .form-input::placeholder { color: var(--text3); }
+    .form-error { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 18px; }
+    .form-success { font-size: 12px; color: var(--green); margin-top: 8px; min-height: 18px; }
+    .auth-btn { width: 100%; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: var(--rs); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .15s; margin-top: 4px; }
+    .auth-btn:hover { background: #2563eb; box-shadow: 0 0 20px var(--accent-glow); }
+    .auth-link { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text3); }
+    .auth-link a { color: var(--accent); text-decoration: none; cursor: pointer; font-weight: 500; }
+    .auth-link a:hover { text-decoration: underline; }
+
+    @keyframes fi { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+    .fi { animation: fi .25s ease forwards; }
+    @keyframes hspulse2 { 0%,100%{opacity:.7;} 50%{opacity:.25;} }
+  </style>
 </head>
 <body>
 
-<!-- MAP -->
+<!-- ═══ LANDING PAGE ═══════════════════════════════════════════ -->
+<div id="view-landing">
+
+  <!-- NAV -->
+  <nav class="lnav">
+    <div class="lnav-logo">
+      <div class="lnav-logo-mark">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="1" width="5" height="5" stroke="#3b82f6" stroke-width="1"/>
+          <rect x="8" y="1" width="5" height="5" fill="#3b82f6" opacity=".4"/>
+          <rect x="1" y="8" width="5" height="5" fill="#3b82f6" opacity=".4"/>
+          <rect x="8" y="8" width="5" height="5" stroke="#3b82f6" stroke-width="1"/>
+        </svg>
+      </div>
+      INFRA TERMINAL
+    </div>
+    <div class="lnav-right">
+      <button class="btn-ghost-sm" onclick="openAuth('login')">Log In</button>
+      <button class="btn-accent-sm" onclick="openAuth('signup')">Start Free Trial</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Global Infrastructure Intelligence</div>
+    <h1 class="hero-h1">Plan <em>Hyperscale</em><br>Infrastructure</h1>
+    <p class="hero-sub">The operating system for data center development.</p>
+    <p class="hero-desc">Simulate locations, infrastructure cost, power markets, and ROI before you break ground. Built for hyperscale developers, sovereign funds, and infrastructure investors.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openAuth('signup')">Start Free Trial</button>
+      <button class="btn-outline" onclick="openAuth('login')">Log In →</button>
+    </div>
+
+    <!-- Animated SVG world map -->
+    <div id="hero-map">
+      <svg id="hero-svg" viewBox="0 0 960 380" xmlns="http://www.w3.org/2000/svg">
+        <rect class="h-ocean" width="960" height="380"/>
+        <g id="hgrat"></g>
+        <g id="hctry"></g>
+        <g id="hhs"></g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div style="position:relative;z-index:1;max-width:640px;margin:0 auto 72px;padding:0 48px;width:100%">
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-num">47</div><div class="stat-lbl">Global Markets</div></div>
+      <div class="stat-item"><div class="stat-num">$2.4T</div><div class="stat-lbl">Infrastructure Modeled</div></div>
+      <div class="stat-item"><div class="stat-num">850+</div><div class="stat-lbl">MW Planned</div></div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="landing-section">
+    <div class="section-tag">// Platform Capabilities</div>
+    <div class="section-h2">Everything you need<br>to plan at scale</div>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-num">01</div>
+        <div class="feat-icon">🌐</div>
+        <div class="feat-title">Site Intelligence</div>
+        <div class="feat-desc">Identify and evaluate hyperscale markets globally. Real-time power costs, land pricing, grid reliability, and competitive density for 47+ markets.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">02</div>
+        <div class="feat-icon">⚙️</div>
+        <div class="feat-title">Infrastructure Modeling</div>
+        <div class="feat-desc">Configure racks, chips, power, and cooling. Model H100, B200, GB300 NVL72, MI300X, TPU v5p, Trainium 2, and 4 more architectures.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">03</div>
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Financial Simulation</div>
+        <div class="feat-desc">Full CAPEX/OPEX breakdowns, revenue projections, and 10-year P&L models. Stress-test ROI across power cost and utilization scenarios instantly.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-num">04</div>
+        <div class="feat-icon">🏗️</div>
+        <div class="feat-title">3D Facility Visualization</div>
+        <div class="feat-desc">Generate real-time 3D facility layouts that scale to your rack count and MW capacity. Server halls, cooling, substations — rendered live.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING -->
+  <div style="position:relative;z-index:1;padding:0 48px;width:100%;max-width:1200px;margin:0 auto">
+    <div class="section-tag">// Pricing</div>
+    <div class="section-h2" style="margin-bottom:32px">One plan.<br>Unlimited access.</div>
+  </div>
+  <div class="pricing-wrap">
+    <div class="pricing-card">
+      <div class="pricing-inner">
+        <div class="pricing-tag">Most Popular</div>
+        <div class="pricing-name">Infrastructure Terminal</div>
+        <div class="pricing-price">
+          <div class="pricing-price-num">$500</div>
+          <div class="pricing-price-meta">/month<br>billed monthly</div>
+        </div>
+        <div class="pricing-desc">Full platform access. Cancel anytime. Deployed to your team within minutes.</div>
+        <ul class="pricing-features">
+          <li>Unlimited infrastructure simulations</li>
+          <li>47+ global market intelligence datasets</li>
+          <li>Real-time financial modeling engine</li>
+          <li>3D facility visualization</li>
+          <li>Full chip architecture library</li>
+          <li>Export reports &amp; simulation data</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="btn-pricing" onclick="openAuth('signup')">Start Subscription →</button>
+      </div>
+      <div class="pricing-foot">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10d9a0" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Secured by Stripe · Cancel anytime · No long-term contracts
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="lfoot">
+    <div class="lfoot-copy">© 2025 INFRA TERMINAL // ALL RIGHTS RESERVED</div>
+    <div style="display:flex;gap:20px">
+      <span style="font-size:11px;color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace">PRIVACY</span>
+      <span style="font-size:11px;color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace">TERMS</span>
+    </div>
+  </footer>
+
+</div><!-- /view-landing -->
+
+
+<!-- ═══ AUTH OVERLAY + MODAL ═══════════════════════════════════ -->
+<div class="auth-overlay" id="auth-overlay" onclick="closeAuth()"></div>
+<div id="auth-panel">
+
+  <!-- LOGIN -->
+  <div class="auth-card" id="auth-login-card">
+    <div class="auth-title">Access Terminal</div>
+    <div class="auth-sub">Sign in to your infrastructure intelligence account.</div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="login-email" placeholder="you@company.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="login-password" placeholder="••••••••">
+    </div>
+    <div class="form-error" id="login-error"></div>
+    <button class="auth-btn" onclick="doLogin()">Access Terminal →</button>
+    <div class="auth-link" style="margin-top:12px"><a onclick="switchAuth('forgot')">Forgot password?</a></div>
+    <div class="auth-link">Don't have an account? <a onclick="switchAuth('signup')">Create one →</a></div>
+    <div class="auth-link"><a onclick="closeAuth()" style="color:var(--text3);font-size:12px">← Back to home</a></div>
+  </div>
+
+  <!-- SIGNUP -->
+  <div class="auth-card" id="auth-signup-card" style="display:none">
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Start your free trial. No credit card required.</div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" type="text" id="signup-name" placeholder="Alex Chen">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Work Email</label>
+      <input class="form-input" type="email" id="signup-email" placeholder="you@company.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="signup-password" placeholder="Min. 8 characters">
+    </div>
+    <div class="form-error" id="signup-error"></div>
+    <div class="form-success" id="signup-success"></div>
+    <button class="auth-btn" onclick="doSignup()">Create Account →</button>
+    <div class="auth-link">Already have an account? <a onclick="switchAuth('login')">Sign in →</a></div>
+    <div class="auth-link"><a onclick="closeAuth()" style="color:var(--text3);font-size:12px">← Back to home</a></div>
+  </div>
+
+  <!-- FORGOT -->
+  <div class="auth-card" id="auth-forgot-card" style="display:none">
+    <div class="auth-title">Reset Password</div>
+    <div class="auth-sub">Enter your email and we'll send a reset link.</div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="forgot-email" placeholder="you@company.com">
+    </div>
+    <div class="form-error" id="forgot-error"></div>
+    <div class="form-success" id="forgot-success"></div>
+    <button class="auth-btn" onclick="doForgot()">Send Reset Link →</button>
+    <div class="auth-link"><a onclick="switchAuth('login')">← Back to login</a></div>
+  </div>
+
+</div><!-- /auth-panel -->
+
+
+<!-- ═══ SIMULATOR UI (hidden until logged in) ══════════════════ -->
 <div id="map"></div>
 
-<!-- TOPBAR -->
 <div id="topbar">
   <div class="logo"><div class="logo-dot"></div>DataCenter Planner</div>
   <div class="tdiv"></div>
@@ -251,18 +566,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
     <span class="pill pill-blue" id="tb-chip">Select a chip</span>
     <span class="pill pill-amber" id="tb-cap">CAPEX: —</span>
     <span class="pill pill-green" id="tb-roi">ROI: —</span>
+    <span class="pill pill-blue" id="tb-user" style="cursor:pointer" onclick="doSignout()">Sign Out</span>
   </div>
 </div>
 
-<!-- SEARCH PANEL -->
+<!-- Search Panel -->
 <div class="fp" id="fp-search">
   <div class="fp-hd">
-    <div class="fp-ico" style="background:rgba(59,130,246,0.15)">🌍</div>
+    <div class="fp-ico" style="background:rgba(59,130,246,.14)">🌍</div>
     <div><div class="fp-title">Select Site</div><div class="fp-sub">Click the map or pick a market</div></div>
   </div>
   <div class="fp-body">
     <div class="sbox">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input type="text" placeholder="Search location…" oninput="filterRegions(this.value)">
     </div>
     <div class="sec-lbl">Major DC Markets</div>
@@ -270,11 +586,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   </div>
 </div>
 
-<!-- SITE PANEL -->
+<!-- Site Panel -->
 <div class="fp hidden" id="fp-site">
   <div class="site-hero">
-    <div class="site-hero-bg"></div>
-    <div class="site-hero-grid"></div>
+    <div class="site-hero-bg"></div><div class="site-hero-grid"></div>
     <div><div class="site-nm" id="snm">—</div><div class="site-co" id="sco">—</div></div>
   </div>
   <div class="fp-body">
@@ -283,11 +598,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
   </div>
 </div>
 
-<!-- CONFIG PANEL -->
+<!-- Config Panel -->
 <div class="fp hidden" id="fp-config">
   <div class="fp-hd">
-    <div class="fp-ico" style="background:rgba(16,185,129,0.15)">⚙️</div>
-    <div><div class="fp-title">Data Center Design</div><div class="fp-sub" id="cfg-sub">Configure hardware &amp; capacity</div></div>
+    <div class="fp-ico" style="background:rgba(16,185,129,.14)">⚙️</div>
+    <div><div class="fp-title">DC Design</div><div class="fp-sub" id="cfg-sub">Configure hardware &amp; capacity</div></div>
   </div>
   <div class="fp-body" style="max-height:calc(100vh - 190px);overflow-y:auto;">
     <div class="tabbar">
@@ -295,77 +610,45 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
       <div class="tab" onclick="ctab('cap',this)">Capacity</div>
       <div class="tab" onclick="ctab('rev',this)">Revenue</div>
     </div>
-
-    <!-- HARDWARE -->
     <div class="tabpanel active" id="tp-hw">
       <div class="sec-lbl">Chip Architecture</div>
       <div class="cgrid" id="cgrid"></div>
     </div>
-
-    <!-- CAPACITY -->
     <div class="tabpanel" id="tp-cap">
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">IT Load Capacity</span><span class="slval" id="vmw">100 MW</span></div>
-        <input type="range" min="5" max="1000" value="100" step="5" id="slmw" oninput="sl(this,'vmw',v=>v+' MW','mw')">
-      </div>
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">Rack Density</span><span class="slval" id="vden">30 kW/rack</span></div>
-        <input type="range" min="5" max="120" value="30" step="5" id="slden" oninput="sl(this,'vden',v=>v+' kW/rack','density')">
-      </div>
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">Utilization Rate</span><span class="slval" id="vutil">75%</span></div>
-        <input type="range" min="20" max="95" value="75" id="slutil" oninput="sl(this,'vutil',v=>v+'%','util')">
-      </div>
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">Redundancy</span><span class="slval" id="vred">2N</span></div>
-        <input type="range" min="1" max="3" value="2" step="1" id="slred" oninput="slred(this)">
-      </div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">IT Load Capacity</span><span class="slval" id="vmw">100 MW</span></div><input type="range" min="5" max="1000" value="100" step="5" id="slmw" oninput="sl(this,'vmw',v=>v+' MW','mw')"></div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">Rack Density</span><span class="slval" id="vden">30 kW/rack</span></div><input type="range" min="5" max="120" value="30" step="5" id="slden" oninput="sl(this,'vden',v=>v+' kW/rack','density')"></div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">Utilization Rate</span><span class="slval" id="vutil">75%</span></div><input type="range" min="20" max="95" value="75" id="slutil" oninput="sl(this,'vutil',v=>v+'%','util')"></div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">Redundancy</span><span class="slval" id="vred">2N</span></div><input type="range" min="1" max="3" value="2" step="1" id="slred" oninput="slred(this)"></div>
     </div>
-
-    <!-- REVENUE -->
     <div class="tabpanel" id="tp-rev">
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">GPU Rental ($/hr/chip)</span><span class="slval" id="vprice">$2.50</span></div>
-        <input type="range" min="0.5" max="10" value="2.5" step="0.1" id="slprice" oninput="sl(this,'vprice',v=>'$'+parseFloat(v).toFixed(2),'gpuPrice')">
-      </div>
-      <div class="slrow">
-        <div class="slhdr"><span class="sllbl">Colo Rate ($/rack/mo)</span><span class="slval" id="vcolo">$1,500</span></div>
-        <input type="range" min="500" max="6000" value="1500" step="100" id="slcolo" oninput="sl(this,'vcolo',v=>'$'+parseInt(v).toLocaleString(),'coloRate')">
-      </div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">GPU Rental ($/hr/chip)</span><span class="slval" id="vprice">$2.50</span></div><input type="range" min="0.5" max="10" value="2.5" step="0.1" id="slprice" oninput="sl(this,'vprice',v=>'$'+parseFloat(v).toFixed(2),'gpuPrice')"></div>
+      <div class="slrow"><div class="slhdr"><span class="sllbl">Colo Rate ($/rack/mo)</span><span class="slval" id="vcolo">$1,500</span></div><input type="range" min="500" max="6000" value="1500" step="100" id="slcolo" oninput="sl(this,'vcolo',v=>'$'+parseInt(v).toLocaleString(),'coloRate')"></div>
       <div class="sec-lbl" style="margin-top:4px">Revenue Mix</div>
       <div class="rev-radios">
         <label><input type="radio" name="rmx" value="gpu" checked onchange="S.revMix=this.value;recalc()"> GPU Cloud</label>
-        <label><input type="radio" name="rmx" value="colo" onchange="S.revMix=this.value;recalc()"> Colocation</label>
+        <label><input type="radio" name="rmx" value="colo" onchange="S.revMix=this.value;recalc()"> Colo</label>
         <label><input type="radio" name="rmx" value="mixed" onchange="S.revMix=this.value;recalc()"> Mixed</label>
       </div>
     </div>
-
     <button class="btnp" onclick="buildFacility()">Generate Facility View →</button>
     <button class="btns" onclick="goStep(1)">← Change Location</button>
   </div>
 </div>
 
-<!-- 3D PANEL -->
+<!-- 3D Panel -->
 <div class="fp hidden" id="fp-3d">
   <div class="fp-hd">
-    <div class="fp-ico" style="background:rgba(245,158,11,0.15)">🏗️</div>
+    <div class="fp-ico" style="background:rgba(245,158,11,.14)">🏗️</div>
     <div><div class="fp-title">Facility Layout</div><div class="fp-sub" id="fsub">3D visualization — drag to orbit</div></div>
   </div>
-  <div id="tcwrap">
-    <canvas id="tcanvas"></canvas>
-    <div class="cvleg" id="cvleg"></div>
-    <div class="cvctrl">
-      <button class="cvbtn" onclick="resetCam()">⟳ Reset</button>
-      <button class="cvbtn" onclick="toggleWF()">◻ Wire</button>
-    </div>
-  </div>
+  <div id="tcwrap"><canvas id="tcanvas"></canvas><div class="cvleg" id="cvleg"></div><div class="cvctrl"><button class="cvbtn" onclick="resetCam()">⟳ Reset</button><button class="cvbtn" onclick="toggleWF()">◻ Wire</button></div></div>
   <div class="fstats" id="fstats"></div>
 </div>
 
-<!-- FINANCE PANEL -->
+<!-- Finance Panel -->
 <div class="fp hidden" id="fp-fin">
   <div class="finhdr">
-    <div class="fp-ico" style="background:rgba(16,185,129,0.15)">📊</div>
+    <div class="fp-ico" style="background:rgba(16,185,129,.14)">📊</div>
     <div style="flex:1"><div class="fp-title">Financial Summary</div><div class="fp-sub" id="finsub">—</div></div>
     <div style="display:flex;gap:6px" id="finpills"></div>
   </div>
@@ -374,245 +657,296 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 
 <div id="tip"></div>
 
+
 <script>
 // ═══════════════════════════════════════════
-// HOTSPOT & LOCATION DATA
+// SUPABASE
+// ═══════════════════════════════════════════
+const SUPABASE_URL = 'https://nqivrdsnlivtmijtkjqh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_hL35-xfKI_e1Qhva4NsSLg_UiCNgA09';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════
+// AUTH FLOW
+// ═══════════════════════════════════════════
+
+function openAuth(section) {
+  document.getElementById('auth-overlay').style.display = 'block';
+  document.getElementById('auth-panel').style.display = 'block';
+  switchAuth(section);
+}
+
+function closeAuth() {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('auth-panel').style.display = 'none';
+}
+
+function switchAuth(section) {
+  ['login','signup','forgot'].forEach(s => {
+    document.getElementById('auth-'+s+'-card').style.display = s === section ? 'block' : 'none';
+  });
+}
+
+async function doLogin() {
+  const email    = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl    = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = error.message; return; }
+    closeAuth();
+    enterApp(data.user);
+  } catch(e) { errEl.textContent = e.message || 'Login failed'; }
+}
+
+async function doSignup() {
+  const name     = document.getElementById('signup-name').value.trim();
+  const email    = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const errEl    = document.getElementById('signup-error');
+  const okEl     = document.getElementById('signup-success');
+  errEl.textContent = ''; okEl.textContent = '';
+  if (!name || !email || password.length < 6) { errEl.textContent = 'Please fill in all fields (password min 6 chars).'; return; }
+  try {
+    const { data, error } = await db.auth.signUp({ email, password, options: { data: { full_name: name } } });
+    if (error) { errEl.textContent = error.message; return; }
+    // If email confirmation is disabled in Supabase, user is logged in immediately
+    if (data.session) {
+      closeAuth();
+      enterApp(data.user);
+    } else {
+      okEl.textContent = '✓ Check your email to confirm your account, then sign in.';
+    }
+  } catch(e) { errEl.textContent = e.message || 'Signup failed'; }
+}
+
+async function doForgot() {
+  const email  = document.getElementById('forgot-email').value.trim();
+  const errEl  = document.getElementById('forgot-error');
+  const okEl   = document.getElementById('forgot-success');
+  errEl.textContent = ''; okEl.textContent = '';
+  if (!email) { errEl.textContent = 'Please enter your email.'; return; }
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+    if (error) { errEl.textContent = error.message; return; }
+    okEl.textContent = '✓ Password reset email sent — check your inbox.';
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+async function doSignout() {
+  await db.auth.signOut();
+  // Show landing, hide app
+  document.getElementById('view-landing').style.display = 'flex';
+  document.getElementById('topbar').classList.remove('visible');
+  document.querySelectorAll('.fp').forEach(p => p.classList.add('hidden'));
+}
+
+// Called once authenticated — hides landing, shows simulator
+function enterApp(user) {
+  document.getElementById('view-landing').style.display = 'none';
+  document.getElementById('topbar').classList.add('visible');
+  document.getElementById('tb-user').textContent = user.email.split('@')[0];
+  // Init map if not already done
+  if (!mapInited) { initMap(); mapInited = true; }
+  initRegionList(); initChipGrid(); initSliders(); goStep(1); updateTB();
+}
+
+// Listen for existing session on page load
+db.auth.onAuthStateChange((event, session) => {
+  if (session?.user && event === 'SIGNED_IN') {
+    // Already logged in — skip landing
+    closeAuth();
+    enterApp(session.user);
+  }
+});
+
+// ═══════════════════════════════════════════
+// HERO MAP (landing page animated SVG)
+// ═══════════════════════════════════════════
+
+(function initHeroMap() {
+  const W = 960, H = 380;
+  function hll(lat,lon){ return { x:((lon+180)/360)*W, y:((90-lat)/180)*H }; }
+
+  let g = '';
+  for(let lon=-180;lon<=180;lon+=30){const x=((lon+180)/360)*W; g+=`<line class="h-grat" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;}
+  for(let lat=-90;lat<=90;lat+=30){const y=((90-lat)/180)*H; g+=`<line class="h-grat" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;}
+  document.getElementById('hgrat').innerHTML = g;
+
+  const ctry=[
+    [[48,-124],[49,-95],[47,-67],[41,-70],[35,-76],[30,-85],[25,-80],[25,-97],[30,-117],[34,-120],[38,-122],[46,-124]],
+    [[60,-140],[60,-95],[60,-64],[47,-53],[44,-67],[49,-95],[49,-124],[55,-130],[60,-140]],
+    [[30,-110],[22,-97],[18,-92],[15,-88],[20,-87],[18,-95],[20,-105],[23,-110],[30,-110]],
+    [[-5,-35],[-5,-50],[-15,-75],[-35,-72],[-35,-55],[-22,-43],[-5,-35]],
+    [[-20,-65],[-55,-70],[-52,-58],[-35,-57],[-20,-65]],
+    [[72,30],[60,30],[55,25],[50,15],[48,8],[43,5],[38,0],[37,10],[41,15],[45,12],[48,18],[50,18],[54,9],[58,5],[62,8],[70,15],[72,30]],
+    [[60,-7],[57,-7],[51,-5],[50,1],[54,0],[58,-5],[60,-7]],
+    [[71,28],[65,28],[60,25],[56,24],[55,9],[57,8],[60,5],[63,8],[68,16],[70,25],[71,28]],
+    [[72,30],[72,140],[65,140],[55,120],[50,130],[45,60],[50,50],[55,60],[65,65],[72,30]],
+    [[38,40],[38,52],[10,50],[0,42],[-35,18],[-35,28],[-5,40],[5,2],[0,-18],[15,-17],[22,0],[38,37],[38,40]],
+    [[38,40],[38,56],[24,56],[12,44],[12,36],[30,32],[36,36],[38,40]],
+    [[36,76],[28,97],[8,77],[20,88],[28,88],[35,75],[36,76]],
+    [[22,98],[10,100],[1,104],[1,110],[5,117],[20,105],[22,98]],
+    [[53,122],[40,130],[25,120],[20,100],[22,98],[35,78],[45,80],[55,90],[55,120],[53,122]],
+    [[45,142],[38,141],[33,130],[37,136],[40,140],[43,141],[45,142]],
+    [[-14,128],[-15,136],[-25,152],[-38,145],[-32,116],[-22,114],[-14,128]],
+    [[55,55],[55,80],[45,80],[35,62],[40,52],[50,52],[55,55]],
+  ];
+  document.getElementById('hctry').innerHTML = ctry.map(pts=>{
+    const d=pts.map(([lt,ln])=>{const p=hll(lt,ln);return`${p.x},${p.y}`;}).join(' ');
+    return`<polygon class="h-land" points="${d}"/>`;
+  }).join('');
+
+  const hots=[
+    {lat:38.9,lon:-77.4,r:9},{lat:37.4,lon:-122,r:7},{lat:32.8,lon:-96.8,r:6},
+    {lat:33.4,lon:-112.1,r:7},{lat:51.5,lon:-.1,r:6},{lat:50.1,lon:8.7,r:6},
+    {lat:52.4,lon:4.9,r:5},{lat:53.3,lon:-6.25,r:5},{lat:1.35,lon:103.8,r:6},
+    {lat:35.7,lon:139.7,r:6},{lat:45.5,lon:-122.6,r:6},{lat:25.2,lon:55.3,r:4},
+    {lat:63.5,lon:10.4,r:4},{lat:17.4,lon:78.5,r:4},{lat:-33.9,lon:151.2,r:4},
+  ];
+
+  const svg = document.getElementById('hero-svg');
+  svg.insertAdjacentHTML('afterbegin',`<defs><filter id="hglow"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`);
+
+  const conns=[[0,1],[0,3],[0,4],[4,5],[4,6],[4,7],[8,9],[1,8],[2,0],[5,6]];
+  let linesHTML='';
+  conns.forEach(([a,b])=>{
+    const pa=hll(hots[a].lat,hots[a].lon), pb=hll(hots[b].lat,hots[b].lon);
+    linesHTML+=`<line x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke="rgba(59,130,246,.18)" stroke-width=".7" stroke-dasharray="5 4"><animate attributeName="stroke-dashoffset" from="0" to="-18" dur="${1.8+Math.random()}s" repeatCount="indefinite"/></line>`;
+  });
+
+  document.getElementById('hhs').innerHTML = linesHTML + hots.map((h,i)=>{
+    const p = hll(h.lat, h.lon);
+    return `<g>
+      <circle cx="${p.x}" cy="${p.y}" r="${h.r*2.6}" fill="rgba(59,130,246,.07)" stroke="rgba(59,130,246,.28)" stroke-width=".8" style="animation:hspulse2 ${2.2+i*.28}s ${i*.35}s infinite ease-in-out"/>
+      <circle cx="${p.x}" cy="${p.y}" r="${h.r*.48}" fill="#3b82f6" opacity=".92" filter="url(#hglow)"/>
+    </g>`;
+  }).join('');
+})();
+
+// ═══════════════════════════════════════════
+// SIMULATOR DATA
 // ═══════════════════════════════════════════
 
 const HOTSPOTS=[
-  {id:'nva', name:'N. Virginia',    lat:38.9,  lng:-77.4,  tier:'T1', mw:8000, cnt:250},
-  {id:'sva', name:'Silicon Valley', lat:37.37, lng:-121.97,tier:'T1', mw:4000, cnt:120},
-  {id:'dal', name:'Dallas',         lat:32.78, lng:-96.8,  tier:'T1', mw:3500, cnt:90},
-  {id:'phx', name:'Phoenix',        lat:33.43, lng:-112.07,tier:'T1', mw:5000, cnt:110},
-  {id:'chi', name:'Chicago',        lat:41.88, lng:-87.63, tier:'T1', mw:2800, cnt:70},
-  {id:'lon', name:'London',         lat:51.5,  lng:-0.12,  tier:'T1', mw:2500, cnt:85},
-  {id:'fra', name:'Frankfurt',      lat:50.11, lng:8.68,   tier:'T1', mw:2200, cnt:75},
-  {id:'ams', name:'Amsterdam',      lat:52.37, lng:4.9,    tier:'T1', mw:2000, cnt:65},
-  {id:'dub', name:'Dublin',         lat:53.33, lng:-6.25,  tier:'T1', mw:1200, cnt:40},
-  {id:'sgp', name:'Singapore',      lat:1.35,  lng:103.82, tier:'T1', mw:1800, cnt:60},
-  {id:'tok', name:'Tokyo',          lat:35.68, lng:139.69, tier:'T1', mw:2000, cnt:55},
-  {id:'syd', name:'Sydney',         lat:-33.87,lng:151.2,  tier:'T2', mw:900,  cnt:30},
-  {id:'ore', name:'Oregon',         lat:45.52, lng:-122.68,tier:'T1', mw:3000, cnt:60},
-  {id:'dxb', name:'Dubai',          lat:25.2,  lng:55.27,  tier:'T2', mw:600,  cnt:20},
-  {id:'mex', name:'Querétaro',      lat:20.59, lng:-100.39,tier:'T2', mw:400,  cnt:15},
-  {id:'nor', name:'Norway',         lat:63.43, lng:10.39,  tier:'T2', mw:500,  cnt:12},
-  {id:'hyd', name:'Hyderabad',      lat:17.39, lng:78.49,  tier:'T2', mw:400,  cnt:18},
-  {id:'scl', name:'Santiago',       lat:-33.45,lng:-70.67, tier:'T2', mw:300,  cnt:10},
-  {id:'joh', name:'Johannesburg',   lat:-26.2, lng:28.04,  tier:'T3', mw:200,  cnt:8},
-  {id:'bom', name:'Mumbai',         lat:19.08, lng:72.88,  tier:'T2', mw:350,  cnt:14},
-  {id:'sea', name:'Seattle',        lat:47.61, lng:-122.33,tier:'T1', mw:1200, cnt:35},
-  {id:'par', name:'Paris',          lat:48.86, lng:2.35,   tier:'T1', mw:1500, cnt:45},
-  {id:'zur', name:'Zurich',         lat:47.38, lng:8.54,   tier:'T1', mw:600,  cnt:20},
-  {id:'sto', name:'Stockholm',      lat:59.33, lng:18.07,  tier:'T2', mw:700,  cnt:22},
-  {id:'osk', name:'Osaka',          lat:34.69, lng:135.5,  tier:'T2', mw:800,  cnt:18},
+  {id:'nva',name:'N. Virginia',lat:38.9,lng:-77.4,tier:'T1',mw:8000,cnt:250},
+  {id:'sva',name:'Silicon Valley',lat:37.37,lng:-121.97,tier:'T1',mw:4000,cnt:120},
+  {id:'dal',name:'Dallas',lat:32.78,lng:-96.8,tier:'T1',mw:3500,cnt:90},
+  {id:'phx',name:'Phoenix',lat:33.43,lng:-112.07,tier:'T1',mw:5000,cnt:110},
+  {id:'chi',name:'Chicago',lat:41.88,lng:-87.63,tier:'T1',mw:2800,cnt:70},
+  {id:'lon',name:'London',lat:51.5,lng:-.12,tier:'T1',mw:2500,cnt:85},
+  {id:'fra',name:'Frankfurt',lat:50.11,lng:8.68,tier:'T1',mw:2200,cnt:75},
+  {id:'ams',name:'Amsterdam',lat:52.37,lng:4.9,tier:'T1',mw:2000,cnt:65},
+  {id:'dub',name:'Dublin',lat:53.33,lng:-6.25,tier:'T1',mw:1200,cnt:40},
+  {id:'sgp',name:'Singapore',lat:1.35,lng:103.82,tier:'T1',mw:1800,cnt:60},
+  {id:'tok',name:'Tokyo',lat:35.68,lng:139.69,tier:'T1',mw:2000,cnt:55},
+  {id:'syd',name:'Sydney',lat:-33.87,lng:151.2,tier:'T2',mw:900,cnt:30},
+  {id:'ore',name:'Oregon',lat:45.52,lng:-122.68,tier:'T1',mw:3000,cnt:60},
+  {id:'dxb',name:'Dubai',lat:25.2,lng:55.27,tier:'T2',mw:600,cnt:20},
+  {id:'mex',name:'Querétaro',lat:20.59,lng:-100.39,tier:'T2',mw:400,cnt:15},
+  {id:'nor',name:'Norway',lat:63.43,lng:10.39,tier:'T2',mw:500,cnt:12},
+  {id:'hyd',name:'Hyderabad',lat:17.39,lng:78.49,tier:'T2',mw:400,cnt:18},
+  {id:'scl',name:'Santiago',lat:-33.45,lng:-70.67,tier:'T2',mw:300,cnt:10},
+  {id:'joh',name:'Johannesburg',lat:-26.2,lng:28.04,tier:'T3',mw:200,cnt:8},
+  {id:'bom',name:'Mumbai',lat:19.08,lng:72.88,tier:'T2',mw:350,cnt:14},
+  {id:'sea',name:'Seattle',lat:47.61,lng:-122.33,tier:'T1',mw:1200,cnt:35},
+  {id:'par',name:'Paris',lat:48.86,lng:2.35,tier:'T1',mw:1500,cnt:45},
+  {id:'zur',name:'Zurich',lat:47.38,lng:8.54,tier:'T1',mw:600,cnt:20},
+  {id:'sto',name:'Stockholm',lat:59.33,lng:18.07,tier:'T2',mw:700,cnt:22},
+  {id:'osk',name:'Osaka',lat:34.69,lng:135.5,tier:'T2',mw:800,cnt:18},
 ];
-
-const BASE={
-  T1:{pc:.065,land:200000,build:10000000,tax:.21,pue:1.32,lab:1.1,ren:38,grid:99.97,conn:'Tier 1',perm:14},
-  T2:{pc:.075,land:80000, build:8000000, tax:.24,pue:1.45,lab:.80,ren:28,grid:99.9, conn:'Tier 2',perm:10},
-  T3:{pc:.09, land:40000, build:7000000, tax:.27,pue:1.60,lab:.50,ren:18,grid:99.5, conn:'Tier 3',perm:8},
-};
-const OV={
-  nva:{pc:.055,tax:.21,pue:1.35,ren:35,land:250000},
-  ore:{pc:.038,tax:.17,pue:1.25,ren:72,land:80000},
-  dub:{pc:.095,tax:.125,pue:1.22,ren:55,land:500000},
-  sgp:{pc:.12,tax:.17,pue:1.5,ren:5,land:2000000},
-  dxb:{pc:.04,tax:.09,pue:1.6,ren:10,land:600000},
-  mex:{pc:.062,tax:.30,pue:1.4,ren:25,land:50000},
-  nor:{pc:.028,tax:.22,pue:1.15,ren:98,land:90000},
-  hyd:{pc:.07,tax:.25,pue:1.55,ren:20,land:40000},
-  zur:{pc:.10,tax:.145,pue:1.25,ren:65,land:800000},
-  sto:{pc:.032,tax:.205,pue:1.18,ren:90,land:120000},
-  par:{pc:.09,tax:.25,pue:1.28,ren:50,land:450000},
-};
-
-const LOCS=HOTSPOTS.map(h=>{
-  const b=BASE[h.tier],o=OV[h.id]||{};
-  return{id:h.id,name:h.name,lat:h.lat,lng:h.lng,
-    powerCostKwh:o.pc||b.pc, landCostPerAcre:o.land||b.land,
-    constructionCostPerMW:b.build, taxRate:o.tax||b.tax,
-    pue:o.pue||b.pue, laborMult:b.lab,
-    waterCostM3:3.5, renewablesPct:o.ren||b.ren,
-    gridReliability:b.grid, permittingMonths:b.perm,
-    connectivity:b.conn, tier:h.tier,
-    existingMW:h.mw, dcCount:h.cnt};
-});
-
+const BASE={T1:{pc:.065,land:200000,build:10000000,tax:.21,pue:1.32,lab:1.1,ren:38,grid:99.97,conn:'Tier 1',perm:14},T2:{pc:.075,land:80000,build:8000000,tax:.24,pue:1.45,lab:.80,ren:28,grid:99.9,conn:'Tier 2',perm:10},T3:{pc:.09,land:40000,build:7000000,tax:.27,pue:1.60,lab:.50,ren:18,grid:99.5,conn:'Tier 3',perm:8}};
+const OV={nva:{pc:.055,tax:.21,pue:1.35,ren:35,land:250000},ore:{pc:.038,tax:.17,pue:1.25,ren:72,land:80000},dub:{pc:.095,tax:.125,pue:1.22,ren:55,land:500000},sgp:{pc:.12,tax:.17,pue:1.5,ren:5,land:2000000},dxb:{pc:.04,tax:.09,pue:1.6,ren:10,land:600000},mex:{pc:.062,tax:.30,pue:1.4,ren:25,land:50000},nor:{pc:.028,tax:.22,pue:1.15,ren:98,land:90000},hyd:{pc:.07,tax:.25,pue:1.55,ren:20,land:40000},zur:{pc:.10,tax:.145,pue:1.25,ren:65,land:800000},sto:{pc:.032,tax:.205,pue:1.18,ren:90,land:120000},par:{pc:.09,tax:.25,pue:1.28,ren:50,land:450000}};
+const LOCS=HOTSPOTS.map(h=>{const b=BASE[h.tier],o=OV[h.id]||{};return{id:h.id,name:h.name,lat:h.lat,lng:h.lng,powerCostKwh:o.pc||b.pc,landCostPerAcre:o.land||b.land,constructionCostPerMW:b.build,taxRate:o.tax||b.tax,pue:o.pue||b.pue,laborMult:b.lab,waterCostM3:3.5,renewablesPct:o.ren||b.ren,gridReliability:b.grid,permittingMonths:b.perm,connectivity:b.conn,tier:h.tier,existingMW:h.mw,dcCount:h.cnt};});
 const CHIPS=[
-  {id:'h100', brand:'NVIDIA', name:'H100 SXM5',   cost:30000,pwrKW:.70,tflops:3958,hbm:80,  gpr:8,  gen:'Hopper'},
-  {id:'b200', brand:'NVIDIA', name:'B200 SXM',    cost:70000,pwrKW:1.2, tflops:9000,hbm:192, gpr:8,  gen:'Blackwell'},
-  {id:'gb300',brand:'NVIDIA', name:'GB300 NVL72',  cost:90000,pwrKW:1.4, tflops:11500,hbm:288,gpr:72, gen:'Blackwell'},
-  {id:'mi300',brand:'AMD',    name:'MI300X',      cost:15000,pwrKW:.75,tflops:5220,hbm:192, gpr:8,  gen:'CDNA3'},
-  {id:'mi325',brand:'AMD',    name:'MI325X',      cost:18000,pwrKW:.80,tflops:6600,hbm:256, gpr:8,  gen:'CDNA3+'},
-  {id:'tpu5', brand:'Google', name:'TPU v5p',     cost:12000,pwrKW:.45,tflops:4594,hbm:95,  gpr:16, gen:'v5'},
-  {id:'tr2',  brand:'AWS',    name:'Trainium 2',  cost:10000,pwrKW:.60,tflops:3800,hbm:96,  gpr:16, gen:'TR2'},
-  {id:'g3',   brand:'Intel',  name:'Gaudi 3',     cost:8500, pwrKW:.90,tflops:5400,hbm:128, gpr:8,  gen:'Gaudi'},
-  {id:'a100', brand:'NVIDIA', name:'A100 SXM4',   cost:12000,pwrKW:.40,tflops:2496,hbm:80,  gpr:8,  gen:'Ampere'},
-  {id:'cpu',  brand:'Intel',  name:'Xeon CPU',    cost:8000, pwrKW:.25,tflops:50,  hbm:512, gpr:40, gen:'CPU'},
+  {id:'h100',brand:'NVIDIA',name:'H100 SXM5',cost:30000,pwrKW:.70,tflops:3958,hbm:80,gpr:8},
+  {id:'b200',brand:'NVIDIA',name:'B200 SXM',cost:70000,pwrKW:1.2,tflops:9000,hbm:192,gpr:8},
+  {id:'gb300',brand:'NVIDIA',name:'GB300 NVL72',cost:90000,pwrKW:1.4,tflops:11500,hbm:288,gpr:72},
+  {id:'mi300',brand:'AMD',name:'MI300X',cost:15000,pwrKW:.75,tflops:5220,hbm:192,gpr:8},
+  {id:'mi325',brand:'AMD',name:'MI325X',cost:18000,pwrKW:.80,tflops:6600,hbm:256,gpr:8},
+  {id:'tpu5',brand:'Google',name:'TPU v5p',cost:12000,pwrKW:.45,tflops:4594,hbm:95,gpr:16},
+  {id:'tr2',brand:'AWS',name:'Trainium 2',cost:10000,pwrKW:.60,tflops:3800,hbm:96,gpr:16},
+  {id:'g3',brand:'Intel',name:'Gaudi 3',cost:8500,pwrKW:.90,tflops:5400,hbm:128,gpr:8},
+  {id:'a100',brand:'NVIDIA',name:'A100 SXM4',cost:12000,pwrKW:.40,tflops:2496,hbm:80,gpr:8},
+  {id:'cpu',brand:'Intel',name:'Xeon CPU',cost:8000,pwrKW:.25,tflops:50,hbm:512,gpr:40},
 ];
-
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
 
 const S={step:1,loc:null,chip:CHIPS[0],mw:100,density:30,util:.75,redun:2,gpuPrice:2.5,coloRate:1500,revMix:'gpu'};
-
-// ═══════════════════════════════════════════
-// LEAFLET MAP
-// ═══════════════════════════════════════════
-
-let map, siteMarker=null;
-const hsMarkers={};
+let mapInited=false, simMap=null, siteMarker=null;
+const TC={T1:'#f59e0b',T2:'#60a5fa',T3:'#6b7280'};
 
 function initMap(){
-  map=L.map('map',{
-    center:[20,10],
-    zoom:3,
-    minZoom:2,
-    maxZoom:18,
-    zoomControl:false,
-    attributionControl:false,
-  });
-
-  // CartoDB Dark Matter tiles
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    subdomains:'abcd',
-    maxZoom:19,
-  }).addTo(map);
-
-  // Zoom control bottom-right
-  L.control.zoom({position:'bottomright'}).addTo(map);
-
-  // Add hotspot markers
+  simMap=L.map('map',{center:[20,10],zoom:3,minZoom:2,maxZoom:18,zoomControl:false,attributionControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(simMap);
+  L.control.zoom({position:'bottomright'}).addTo(simMap);
   HOTSPOTS.forEach(addHotspotMarker);
-
-  // Click anywhere on map
-  map.on('click',onMapClick);
+  simMap.on('click',onMapClick);
 }
 
-const TIER_COLOR={T1:'#f59e0b',T2:'#60a5fa',T3:'#6b7280'};
-const TIER_SIZE={T1:20,T2:14,T3:10};
-
 function addHotspotMarker(h){
-  const size=TIER_SIZE[h.tier];
-  const color=TIER_COLOR[h.tier];
-
+  const size=h.tier==='T1'?18:h.tier==='T2'?13:9, color=TC[h.tier];
   const el=document.createElement('div');
   el.style.cssText=`position:relative;width:${size}px;height:${size}px;`;
-
-  // pulse ring
   const pulse=document.createElement('div');
   pulse.className='hs-pulse';
   pulse.style.cssText=`width:${size}px;height:${size}px;border:1.5px solid ${color};top:0;left:0;`;
-  el.appendChild(pulse);
-
-  // center dot
   const dot=document.createElement('div');
-  dot.className='hs-marker';
-  dot.style.cssText=`width:${size}px;height:${size}px;background:${color}22;border:1.5px solid ${color};box-shadow:0 0 ${size}px ${color}66;`;
+  dot.style.cssText=`width:${size}px;height:${size}px;border-radius:50%;background:${color}22;border:1.5px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:0 0 ${size}px ${color}55;`;
   const inner=document.createElement('div');
-  inner.style.cssText=`width:${size*.38}px;height:${size*.38}px;border-radius:50%;background:${color};box-shadow:0 0 8px ${color};`;
-  dot.appendChild(inner);
-  el.appendChild(dot);
-
-  const marker=L.marker([h.lat,h.lng],{
-    icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]}),
-    zIndexOffset:100,
-  }).addTo(map);
-
+  inner.style.cssText=`width:${size*.36}px;height:${size*.36}px;border-radius:50%;background:${color};`;
+  dot.appendChild(inner);el.appendChild(pulse);el.appendChild(dot);
+  const marker=L.marker([h.lat,h.lng],{icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]}),zIndexOffset:100}).addTo(simMap);
   marker.on('click',e=>{L.DomEvent.stopPropagation(e);selLocById(h.id);});
-  marker.on('mouseover',e=>{showPopup(e.latlng,h);});
-  marker.on('mouseout',()=>{map.closePopup();});
-
-  hsMarkers[h.id]=marker;
-}
-
-function showPopup(latlng,h){
-  const color=TIER_COLOR[h.tier];
-  L.popup({closeButton:false,offset:[0,-8],className:''})
-    .setLatLng(latlng)
-    .setContent(`
-      <div style="padding:10px 14px;min-width:160px">
-        <div style="font-weight:700;font-size:13px;color:#e8edf5;margin-bottom:5px">${h.name}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:${color}">${h.tier}</span>
-          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:#94a3b8">${h.mw.toLocaleString()} MW</span>
-          <span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:4px;color:#94a3b8">${h.cnt} DCs</span>
-        </div>
-      </div>`)
-    .openOn(map);
+  marker.on('mouseover',e=>{
+    L.popup({closeButton:false,offset:[0,-8]}).setLatLng(e.latlng)
+      .setContent(`<div style="padding:9px 13px;min-width:148px;font-family:'DM Sans',sans-serif"><div style="font-weight:700;font-size:13px;color:#e8edf5;margin-bottom:5px">${h.name}</div><div style="display:flex;gap:5px;flex-wrap:wrap"><span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;color:${color}">${h.tier}</span><span style="font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;color:#94a3b8">${h.mw.toLocaleString()} MW</span></div></div>`)
+      .openOn(simMap);
+  });
+  marker.on('mouseout',()=>simMap.closePopup());
 }
 
 function onMapClick(e){
-  // Check if near a hotspot
-  let closest=null,minDist=Infinity;
-  HOTSPOTS.forEach(h=>{
-    const d=map.distance([h.lat,h.lng],[e.latlng.lat,e.latlng.lng]);
-    if(d<80000&&d<minDist){minDist=d;closest=h;} // within ~80km
-  });
-  if(closest){selLocById(closest.id);}
-  else{selCustom(e.latlng.lat,e.latlng.lng);}
+  let closest=null,minD=Infinity;
+  HOTSPOTS.forEach(h=>{const d=simMap.distance([h.lat,h.lng],[e.latlng.lat,e.latlng.lng]);if(d<80000&&d<minD){minD=d;closest=h;}});
+  if(closest)selLocById(closest.id);
+  else selCustom(e.latlng.lat,e.latlng.lng);
 }
 
 function placeSitePin(lat,lng){
-  if(siteMarker)map.removeLayer(siteMarker);
-  const el=document.createElement('div');
-  el.className='site-marker';
-  siteMarker=L.marker([lat,lng],{
-    icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[14,14],iconAnchor:[7,7]}),
-    zIndexOffset:1000,
-  }).addTo(map);
+  if(siteMarker)simMap.removeLayer(siteMarker);
+  const el=document.createElement('div');el.className='site-marker';
+  siteMarker=L.marker([lat,lng],{icon:L.divIcon({html:el.outerHTML,className:'',iconSize:[13,13],iconAnchor:[6,6]}),zIndexOffset:1000}).addTo(simMap);
 }
 
 function selLocById(id){
-  const loc=LOCS.find(l=>l.id===id);
-  if(!loc)return;
-  S.loc=loc;
-  placeSitePin(loc.lat,loc.lng);
-  map.flyTo([loc.lat,loc.lng],8,{duration:1.2});
+  const loc=LOCS.find(l=>l.id===id);if(!loc)return;
+  S.loc=loc;placeSitePin(loc.lat,loc.lng);
+  simMap.flyTo([loc.lat,loc.lng],8,{duration:1.1});
   showSitePanel(loc);
   document.querySelectorAll('.ri').forEach(el=>el.classList.toggle('active',el.dataset.id===id));
   recalc();
 }
-
 function selCustom(lat,lng){
-  S.loc=makeCustomLoc(lat,lng);
-  placeSitePin(lat,lng);
+  S.loc=makeCustomLoc(lat,lng);placeSitePin(lat,lng);
   showSitePanel(S.loc);
   document.querySelectorAll('.ri').forEach(el=>el.classList.remove('active'));
   recalc();
 }
-
 function makeCustomLoc(lat,lng){
-  const al=Math.abs(lat);
   let pc=.07,land=80000,build=8500000,tax=.25,pue=1.45,lab=.8,ren=25,grid=99.7,conn='Tier 3',perm=16;
   if(lng>-10&&lng<40&&lat>35){pc=.085;land=200000;build=9500000;tax=.22;pue=1.3;lab=1.1;ren=45;grid=99.9;conn='Tier 2';}
   else if(lng>-130&&lng<-60&&lat>25&&lat<55){pc=.06;land=150000;build=9000000;tax=.21;pue=1.38;lab=1.0;ren=30;grid=99.9;conn='Tier 2';}
   else if(lng>100&&lat>-10&&lat<40){pc=.09;land=200000;build=9000000;tax=.20;pue=1.5;lab=.7;ren=20;grid=99.7;conn='Tier 2';}
-  if(al>55){pue=Math.max(1.15,pue-.2);pc=Math.max(.03,pc-.025);ren=Math.min(95,ren+30);}
-  const names={europe:'European Site',namerica:'N. American Site',apac:'Asia-Pacific Site',meast:'Middle East Site',other:'Custom Site'};
-  const region=lng>-10&&lng<40&&lat>35?'europe':lng>-130&&lng<-60&&lat>25&&lat<55?'namerica':lng>100&&lat>-10&&lat<40?'apac':lng>30&&lng<60&&lat>15&&lat<40?'meast':'other';
-  return{id:'custom',name:names[region],lat,lng,powerCostKwh:+pc.toFixed(3),landCostPerAcre:land,constructionCostPerMW:build,taxRate:tax,pue,laborMult:lab,waterCostM3:3,renewablesPct:ren,gridReliability:grid,permittingMonths:perm,connectivity:conn,tier:'T3',existingMW:0,dcCount:0};
+  if(Math.abs(lat)>55){pue=Math.max(1.15,pue-.2);pc=Math.max(.03,pc-.025);ren=Math.min(95,ren+30);}
+  const nm=lng>-10&&lng<40&&lat>35?'European Site':lng>-130&&lng<-60&&lat>25&&lat<55?'N. American Site':lng>100&&lat>-10&&lat<40?'Asia-Pacific Site':'Custom Site';
+  return{id:'custom',name:nm,lat,lng,powerCostKwh:+pc.toFixed(3),landCostPerAcre:land,constructionCostPerMW:build,taxRate:tax,pue,laborMult:lab,waterCostM3:3,renewablesPct:ren,gridReliability:grid,permittingMonths:perm,connectivity:conn,tier:'T3',existingMW:0,dcCount:0};
 }
-
-// ═══════════════════════════════════════════
-// REGION LIST
-// ═══════════════════════════════════════════
 
 function initRegionList(){renderRL(LOCS);}
-function renderRL(locs){
-  document.getElementById('rlist').innerHTML=locs.map(l=>`
-    <div class="ri fi" data-id="${l.id}" onclick="selLocById('${l.id}')">
-      <div class="rdot" style="background:${TIER_COLOR[l.tier]}"></div>
-      <div class="rname">${l.name}</div>
-      <div class="rmeta">$${(l.powerCostKwh*100).toFixed(1)}¢/kWh</div>
-    </div>`).join('');
-}
+function renderRL(locs){document.getElementById('rlist').innerHTML=locs.map(l=>`<div class="ri fi" data-id="${l.id}" onclick="selLocById('${l.id}')"><div class="rdot" style="background:${TC[l.tier]}"></div><div class="rname">${l.name}</div><div class="rmeta">$${(l.powerCostKwh*100).toFixed(1)}¢</div></div>`).join('');}
 function filterRegions(q){renderRL(LOCS.filter(l=>l.name.toLowerCase().includes(q.toLowerCase())));}
-
-// ═══════════════════════════════════════════
-// SITE PANEL
-// ═══════════════════════════════════════════
 
 function showSitePanel(loc){
   document.getElementById('fp-search').classList.add('hidden');
@@ -621,8 +955,8 @@ function showSitePanel(loc){
   document.getElementById('sco').textContent=`${loc.lat.toFixed(3)}°, ${loc.lng.toFixed(3)}°`;
   const rc=loc.pue<1.25?'gr':loc.pue<1.4?'bl':loc.pue<1.55?'am':'rd';
   document.getElementById('sgrid').innerHTML=`
-    <div class="sc"><div class="sclbl">Power Cost</div><div class="scval bl">$${loc.powerCostKwh.toFixed(3)}/kWh</div></div>
-    <div class="sc"><div class="sclbl">Land / acre</div><div class="scval">${fmt(loc.landCostPerAcre)}</div></div>
+    <div class="sc"><div class="sclbl">Power</div><div class="scval bl">$${loc.powerCostKwh.toFixed(3)}/kWh</div></div>
+    <div class="sc"><div class="sclbl">Land/acre</div><div class="scval">${fmt(loc.landCostPerAcre)}</div></div>
     <div class="sc"><div class="sclbl">PUE</div><div class="scval ${rc}">${loc.pue}</div></div>
     <div class="sc"><div class="sclbl">Corp Tax</div><div class="scval">${(loc.taxRate*100).toFixed(1)}%</div></div>
     <div class="sc"><div class="sclbl">Renewables</div><div class="scval ${loc.renewablesPct>50?'gr':'am'}">${loc.renewablesPct}%</div></div>
@@ -632,265 +966,103 @@ function showSitePanel(loc){
   markDone(1);
 }
 
-// ═══════════════════════════════════════════
-// CHIP GRID
-// ═══════════════════════════════════════════
-
-function initChipGrid(){
-  document.getElementById('cgrid').innerHTML=CHIPS.map(c=>`
-    <div class="cc ${c.id===S.chip.id?'sel':''}" onclick="selChip('${c.id}')">
-      <div class="cbrand">${c.brand}</div>
-      <div class="cname">${c.name}</div>
-      <div class="cspec">$<span>${(c.cost/1000).toFixed(0)}K</span>/unit</div>
-      <div class="cspec"><span>${(c.tflops/1000).toFixed(1)}</span> PF · <span>${c.pwrKW}</span> kW</div>
-    </div>`).join('');
-}
+function initChipGrid(){document.getElementById('cgrid').innerHTML=CHIPS.map(c=>`<div class="cc ${c.id===S.chip.id?'sel':''}" onclick="selChip('${c.id}')"><div class="cbrand">${c.brand}</div><div class="cname">${c.name}</div><div class="cspec">$<span>${(c.cost/1000).toFixed(0)}K</span>/unit</div><div class="cspec"><span>${(c.tflops/1000).toFixed(1)}</span> PF · <span>${c.pwrKW}</span> kW</div></div>`).join('');}
 function selChip(id){S.chip=CHIPS.find(c=>c.id===id);initChipGrid();recalc();updateTB();}
 
-// ═══════════════════════════════════════════
-// SLIDERS
-// ═══════════════════════════════════════════
-
-function sl(el,vid,fmt2,key){
-  document.getElementById(vid).textContent=fmt2(el.value);
-  el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
-  if(key==='mw')S.mw=+el.value;
-  else if(key==='density')S.density=+el.value;
-  else if(key==='util')S.util=+el.value/100;
-  else if(key==='gpuPrice')S.gpuPrice=+el.value;
-  else if(key==='coloRate')S.coloRate=+el.value;
-  recalc();
-}
-function slred(el){
-  document.getElementById('vred').textContent={1:'N+1',2:'2N',3:'2N+1'}[el.value];
-  el.style.setProperty('--pct',((el.value-1)/2*100)+'%');
-  S.redun=+el.value;recalc();
-}
-function initSliders(){
-  document.querySelectorAll('input[type=range]').forEach(el=>{
-    el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
-  });
-}
-
-// ═══════════════════════════════════════════
-// FINANCIALS
-// ═══════════════════════════════════════════
+function sl(el,vid,fmt2,key){document.getElementById(vid).textContent=fmt2(el.value);el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');if(key==='mw')S.mw=+el.value;else if(key==='density')S.density=+el.value;else if(key==='util')S.util=+el.value/100;else if(key==='gpuPrice')S.gpuPrice=+el.value;else if(key==='coloRate')S.coloRate=+el.value;recalc();}
+function slred(el){document.getElementById('vred').textContent={1:'N+1',2:'2N',3:'2N+1'}[el.value];el.style.setProperty('--pct',((el.value-1)/2*100)+'%');S.redun=+el.value;recalc();}
+function initSliders(){document.querySelectorAll('input[type=range]').forEach(el=>{el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');});}
 
 function calcF(){
   const loc=S.loc;if(!loc)return null;
   const{chip,mw,util,redun,gpuPrice,coloRate,revMix}=S;
-  const totalKW=mw*1000, facKW=totalKW*loc.pue;
-  const nChips=Math.floor(totalKW/chip.pwrKW);
-  const nRacks=Math.ceil(nChips/chip.gpr);
+  const totalKW=mw*1000,facKW=totalKW*loc.pue;
+  const nChips=Math.floor(totalKW/chip.pwrKW),nRacks=Math.ceil(nChips/chip.gpr);
   const acres=Math.max(1,Math.ceil(mw*.5+nRacks*.008));
   const rdm={1:1.15,2:1.30,3:1.45}[redun];
-  const cChip=nChips*chip.cost;
-  const cBuild=mw*loc.constructionCostPerMW*loc.laborMult*rdm;
-  const cLand=acres*loc.landCostPerAcre;
-  const cPwr=mw*1600000*rdm;
-  const cCool=mw*900000;
-  const cNet=nRacks*18000;
-  const cMisc=(cBuild+cChip)*.08;
+  const cChip=nChips*chip.cost,cBuild=mw*loc.constructionCostPerMW*loc.laborMult*rdm;
+  const cLand=acres*loc.landCostPerAcre,cPwr=mw*1600000*rdm,cCool=mw*900000,cNet=nRacks*18000,cMisc=(cBuild+cChip)*.08;
   const capex=cChip+cBuild+cLand+cPwr+cCool+cNet+cMisc;
-  const oPwr=facKW*8760*loc.powerCostKwh;
-  const oLab=nRacks*600*loc.laborMult;
-  const oWat=mw*1200*loc.waterCostM3;
-  const oNet=nRacks*2200;
-  const oMnt=capex*.025;
-  const oIns=capex*.008;
+  const oPwr=facKW*8760*loc.powerCostKwh,oLab=nRacks*600*loc.laborMult,oWat=mw*1200*loc.waterCostM3,oNet=nRacks*2200,oMnt=capex*.025,oIns=capex*.008;
   const opex=oPwr+oLab+oWat+oNet+oMnt+oIns;
-  const gRev=nChips*8760*util*gpuPrice;
-  const cRev=nRacks*coloRate*12;
+  const gRev=nChips*8760*util*gpuPrice,cRev=nRacks*coloRate*12;
   const rev=revMix==='gpu'?gRev:revMix==='colo'?cRev:gRev*.6+cRev*.4;
   const ebitda=rev-opex,depr=capex/7,ebit=ebitda-depr;
   const tax=Math.max(0,ebit*loc.taxRate),ni=ebit-tax;
-  const roi=capex>0?(ni/capex)*100:0;
-  const pb=ni>0?capex/ni:null;
-  const margin=rev>0?ebitda/rev*100:0;
-  return{nChips,nRacks,acres,capex,opex,rev,ebitda,ni,roi,pb,margin,
-    yr5:Math.max(0,ni*5-capex),yr10:Math.max(0,ni*10-capex),mw,
-    cChip,cBuild,cLand,cPwr,cCool,cNet,cMisc};
+  const roi=capex>0?(ni/capex)*100:0,pb=ni>0?capex/ni:null,margin=rev>0?ebitda/rev*100:0;
+  return{nChips,nRacks,acres,capex,opex,rev,ebitda,ni,roi,pb,margin,yr5:Math.max(0,ni*5-capex),yr10:Math.max(0,ni*10-capex),mw};
 }
 
-function recalc(){
-  const f=calcF();if(!f)return;
-  renderFinance(f);updateTB(f);
-  if(S.step>=3)renderFacStats(f);
-}
-
-function fmt(n){
-  if(n===null||isNaN(n))return'—';
-  const a=Math.abs(n),s=n<0?'-':'';
-  if(a>=1e9)return s+'$'+(a/1e9).toFixed(2)+'B';
-  if(a>=1e6)return s+'$'+(a/1e6).toFixed(1)+'M';
-  if(a>=1e3)return s+'$'+(a/1e3).toFixed(0)+'K';
-  return s+'$'+a.toFixed(0);
-}
+function recalc(){const f=calcF();if(!f)return;renderFinance(f);updateTB(f);if(S.step>=3)renderFacStats(f);}
+function fmt(n){if(n===null||isNaN(n))return'—';const a=Math.abs(n),s=n<0?'-':'';if(a>=1e9)return s+'$'+(a/1e9).toFixed(2)+'B';if(a>=1e6)return s+'$'+(a/1e6).toFixed(1)+'M';if(a>=1e3)return s+'$'+(a/1e3).toFixed(0)+'K';return s+'$'+a.toFixed(0);}
 function fmtN(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':n.toLocaleString();}
 
 function renderFinance(f){
-  const p=f.ni>0;
-  const rc=f.roi>15?'var(--green)':f.roi>5?'var(--accent)':f.roi>0?'var(--amber)':'var(--red)';
+  const p=f.ni>0;const rc=f.roi>15?'var(--green)':f.roi>5?'var(--accent)':f.roi>0?'var(--amber)':'var(--red)';
   document.getElementById('fingrid').innerHTML=`
     <div class="fm"><div class="fml">Total CAPEX</div><div class="fmv" style="color:var(--amber)">${fmt(f.capex)}</div><div class="fms">${fmt(f.capex/f.mw)}/MW</div></div>
     <div class="fm"><div class="fml">Annual Revenue</div><div class="fmv" style="color:var(--green)">${fmt(f.rev)}</div><div class="fms">${fmt(f.rev/12)}/mo</div></div>
-    <div class="fm"><div class="fml">Net Income / yr</div><div class="fmv" style="color:${p?'var(--green)':'var(--red)'}">${fmt(f.ni)}</div><div class="fms">EBITDA ${f.margin.toFixed(0)}%</div></div>
+    <div class="fm"><div class="fml">Net Income/yr</div><div class="fmv" style="color:${p?'var(--green)':'var(--red)'}">${fmt(f.ni)}</div><div class="fms">EBITDA ${f.margin.toFixed(0)}%</div></div>
     <div class="fm"><div class="fml">ROI (unlevered)</div><div class="fmv" style="color:${rc}">${f.roi.toFixed(1)}%</div><div class="fms">${f.pb?f.pb.toFixed(1)+' yr payback':'No payback'}</div></div>
     <div class="fm"><div class="fml">10-yr Profit</div><div class="fmv" style="color:${f.yr10>0?'var(--green)':'var(--red)'}">${fmt(f.yr10)}</div><div class="fms">5-yr: ${fmt(f.yr5)}</div></div>`;
   document.getElementById('finsub').textContent=`${fmtN(f.nChips)} chips · ${fmtN(f.nRacks)} racks · ${f.mw} MW`;
-  document.getElementById('finpills').innerHTML=`
-    <span class="pill ${p?'pill-green':'pill-red'}">${p?'PROFITABLE':'LOSS-MAKING'}</span>
-    <span class="pill pill-blue">${f.pb?f.pb.toFixed(1)+'yr payback':'No payback'}</span>`;
+  document.getElementById('finpills').innerHTML=`<span class="pill ${p?'pill-green':'pill-red'}">${p?'PROFITABLE':'LOSS-MAKING'}</span><span class="pill pill-blue">${f.pb?f.pb.toFixed(1)+'yr payback':'No payback'}</span>`;
 }
-
 function updateTB(f){
   document.getElementById('tb-chip').textContent=S.chip.name;
-  if(f){
-    document.getElementById('tb-cap').textContent='CAPEX: '+fmt(f.capex);
-    const el=document.getElementById('tb-roi');
-    el.textContent='ROI: '+f.roi.toFixed(1)+'%';
-    el.className='pill '+(f.roi>10?'pill-green':f.roi>0?'pill-amber':'pill-red');
-  }
+  if(f){document.getElementById('tb-cap').textContent='CAPEX: '+fmt(f.capex);const el=document.getElementById('tb-roi');el.textContent='ROI: '+f.roi.toFixed(1)+'%';el.className='pill '+(f.roi>10?'pill-green':f.roi>0?'pill-amber':'pill-red');}
 }
 
-// ═══════════════════════════════════════════
-// THREE.JS 3D
-// ═══════════════════════════════════════════
-
+// THREE.JS
 let R,SC,CAM,drag=false,lmx=0,lmy=0,theta=.55,phi=1.05,camR=110,wf=false;
 const meshes=[];
-
 function initThree(){
-  const canvas=document.getElementById('tcanvas');
-  const wrap=document.getElementById('tcwrap');
-  R=new THREE.WebGLRenderer({canvas,antialias:true});
-  R.setPixelRatio(Math.min(devicePixelRatio,2));
-  R.shadowMap.enabled=true;
-  R.setSize(wrap.clientWidth,wrap.clientHeight);
-
-  SC=new THREE.Scene();
-  SC.background=new THREE.Color(0x060b14);
-  SC.fog=new THREE.FogExp2(0x060b14,.007);
-
-  CAM=new THREE.PerspectiveCamera(42,wrap.clientWidth/wrap.clientHeight,.1,1000);
-  moveCam();
-
-  SC.add(new THREE.AmbientLight(0x2a3d5a,1));
-  const dl=new THREE.DirectionalLight(0x8ab4d4,1.4);
-  dl.position.set(60,80,50);dl.castShadow=true;SC.add(dl);
+  const canvas=document.getElementById('tcanvas'),wrap=document.getElementById('tcwrap');
+  R=new THREE.WebGLRenderer({canvas,antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.setSize(wrap.clientWidth,wrap.clientHeight);
+  SC=new THREE.Scene();SC.background=new THREE.Color(0x050a12);SC.fog=new THREE.FogExp2(0x050a12,.007);
+  CAM=new THREE.PerspectiveCamera(42,wrap.clientWidth/wrap.clientHeight,.1,1000);moveCam();
+  SC.add(new THREE.AmbientLight(0x1e3050,.9));const dl=new THREE.DirectionalLight(0x7aaac8,1.4);dl.position.set(60,80,50);dl.castShadow=true;SC.add(dl);
   SC.add(Object.assign(new THREE.PointLight(0x3b82f6,3,90),{position:new THREE.Vector3(0,22,0)}));
   SC.add(Object.assign(new THREE.PointLight(0x10b981,1.5,60),{position:new THREE.Vector3(20,10,-20)}));
-
-  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshLambertMaterial({color:0x08111e}));
-  gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;SC.add(gnd);
-  SC.add(new THREE.GridHelper(400,60,0x162a40,0x101e2e));
-
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshLambertMaterial({color:0x060e1c}));gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;SC.add(gnd);
+  SC.add(new THREE.GridHelper(400,60,0x0f2040,0x090f1e));
   wrap.addEventListener('mousedown',e=>{drag=true;lmx=e.clientX;lmy=e.clientY;});
   window.addEventListener('mouseup',()=>drag=false);
-  window.addEventListener('mousemove',e=>{
-    if(!drag)return;
-    theta-=(e.clientX-lmx)*.008;
-    phi=Math.max(.25,Math.min(1.45,phi-(e.clientY-lmy)*.005));
-    lmx=e.clientX;lmy=e.clientY;moveCam();
-  });
+  window.addEventListener('mousemove',e=>{if(!drag)return;theta-=(e.clientX-lmx)*.008;phi=Math.max(.25,Math.min(1.45,phi-(e.clientY-lmy)*.005));lmx=e.clientX;lmy=e.clientY;moveCam();});
   wrap.addEventListener('wheel',e=>{camR=Math.max(35,Math.min(280,camR+e.deltaY*.12));moveCam();});
   (function anim(){requestAnimationFrame(anim);R.render(SC,CAM);})();
 }
-
-function moveCam(){
-  if(!CAM)return;
-  CAM.position.set(camR*Math.sin(phi)*Math.sin(theta),camR*Math.cos(phi),camR*Math.sin(phi)*Math.cos(theta));
-  CAM.lookAt(0,4,0);
-}
-
+function moveCam(){if(!CAM)return;CAM.position.set(camR*Math.sin(phi)*Math.sin(theta),camR*Math.cos(phi),camR*Math.sin(phi)*Math.cos(theta));CAM.lookAt(0,4,0);}
 function buildScene(f){
   meshes.forEach(m=>SC.remove(m));meshes.length=0;
-  const nH=Math.max(1,Math.min(8,Math.ceil(f.nRacks/1000)));
-  const rpH=Math.ceil(f.nRacks/nH);
+  const nH=Math.max(1,Math.min(8,Math.ceil(f.nRacks/1000))),rpH=Math.ceil(f.nRacks/nH);
   const hW=26,hD=56,hH=9,gap=7,totW=nH*(hW+gap)-gap,ox=-totW/2;
-
   const mk=(geo,col,cast=true)=>{const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));if(cast)m.castShadow=true;m.receiveShadow=true;return m;};
-
   for(let i=0;i<nH;i++){
-    const hx=ox+i*(hW+gap)+hW/2;
-    const g=new THREE.Group();
-    const body=mk(new THREE.BoxGeometry(hW,hH,hD),0x162a42);body.position.set(0,hH/2,0);g.add(body);
-    const roof=mk(new THREE.BoxGeometry(hW+.6,.7,hD+.6),0x0f1e30);roof.position.set(0,hH+.35,0);g.add(roof);
-    // Windows strip
-    const win=mk(new THREE.BoxGeometry(hW-.5,.8,hD-.5),0x1a3a5c,false);win.position.set(0,hH*.6,0);g.add(win);
-    const cols=Math.min(7,Math.ceil(Math.sqrt(rpH)));
-    const rows=Math.min(7,Math.ceil(rpH/cols));
+    const hx=ox+i*(hW+gap)+hW/2,g=new THREE.Group();
+    const body=mk(new THREE.BoxGeometry(hW,hH,hD),0x0d2040);body.position.set(0,hH/2,0);g.add(body);
+    const roof=mk(new THREE.BoxGeometry(hW+.6,.7,hD+.6),0x08182e);roof.position.set(0,hH+.35,0);g.add(roof);
+    const win=mk(new THREE.BoxGeometry(hW-.4,.8,hD-.4),0x0e2a50,false);win.position.set(0,hH*.6,0);g.add(win);
+    const cols=Math.min(7,Math.ceil(Math.sqrt(rpH))),rows=Math.min(7,Math.ceil(rpH/cols));
     for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-      const rk=mk(new THREE.BoxGeometry(1.1,6.2,1.2),0x0d3265);
-      rk.position.set(-(cols*1.55)/2+c*1.55+.775,3.1,-(rows*1.85)/2+r*1.85+.925);g.add(rk);
-      const led=new THREE.Mesh(new THREE.BoxGeometry(.055,6,.04),new THREE.MeshBasicMaterial({color:0x00aaff}));
-      led.position.set(-(cols*1.55)/2+c*1.55+1.325,3.1,-(rows*1.85)/2+r*1.85+.925+.62);g.add(led);
+      const rk=mk(new THREE.BoxGeometry(1.1,6.2,1.2),0x0a2a5c);rk.position.set(-(cols*1.55)/2+c*1.55+.775,3.1,-(rows*1.85)/2+r*1.85+.925);g.add(rk);
+      const led=new THREE.Mesh(new THREE.BoxGeometry(.055,6,.04),new THREE.MeshBasicMaterial({color:0x0099ee}));led.position.set(-(cols*1.55)/2+c*1.55+1.325,3.1,-(rows*1.85)/2+r*1.85+.925+.62);g.add(led);
     }
     g.position.set(hx,0,0);SC.add(g);meshes.push(g);
   }
-
-  // Cooling towers
   const cc=Math.max(2,Math.ceil(nH*1.6));
-  for(let i=0;i<cc;i++){
-    const cx=ox+(i/(cc-1||1))*totW;
-    const tower=mk(new THREE.BoxGeometry(7,6,5),0x0a3020);
-    tower.position.set(cx,3,hD/2+5);SC.add(tower);meshes.push(tower);
-    const fan=mk(new THREE.CylinderGeometry(2,2,.6,10),0x071a10);
-    fan.position.set(cx,6.3,hD/2+5);SC.add(fan);meshes.push(fan);
-    const steam=mk(new THREE.CylinderGeometry(.3,1,3,8),0x0d2a18,false);
-    steam.position.set(cx,8,hD/2+5);SC.add(steam);meshes.push(steam);
-  }
-
-  // Substation
-  const sub=mk(new THREE.BoxGeometry(20,8,12),0x2a1800);sub.position.set(ox-18,4,0);SC.add(sub);meshes.push(sub);
-  for(let i=0;i<4;i++){
-    const t=mk(new THREE.CylinderGeometry(1.2,1.3,4,8),0x3d2500);
-    t.position.set(ox-18+(i-1.5)*4.5,4.5,-7.5);SC.add(t);meshes.push(t);
-  }
-  // HV lines (poles)
-  for(let i=0;i<3;i++){
-    const pole=mk(new THREE.CylinderGeometry(.2,.2,12,6),0x1a1200);
-    pole.position.set(ox-32+i*8,6,0);SC.add(pole);meshes.push(pole);
-  }
-
-  // Admin block
-  const adm=mk(new THREE.BoxGeometry(18,7,14),0x141e28);
-  adm.position.set(totW/2-ox+14,3.5,-hD/2-9);SC.add(adm);meshes.push(adm);
-  const admRoof=mk(new THREE.BoxGeometry(19,.8,15),0x0e1820);
-  admRoof.position.set(totW/2-ox+14,7.4,-hD/2-9);SC.add(admRoof);meshes.push(admRoof);
-
-  // Roads
-  const road1=new THREE.Mesh(new THREE.PlaneGeometry(totW+80,7),new THREE.MeshLambertMaterial({color:0x08101a}));
-  road1.rotation.x=-Math.PI/2;road1.position.set(0,.02,hD/2+13);SC.add(road1);meshes.push(road1);
-
-  document.getElementById('cvleg').innerHTML=`
-    <div class="lgi"><div class="lgd" style="background:#162a42"></div><span class="lgl">Server Halls</span></div>
-    <div class="lgi"><div class="lgd" style="background:#0a3020"></div><span class="lgl">Cooling</span></div>
-    <div class="lgi"><div class="lgd" style="background:#2a1800"></div><span class="lgl">Substation</span></div>
-    <div class="lgi"><div class="lgd" style="background:#141e28"></div><span class="lgl">Admin</span></div>`;
+  for(let i=0;i<cc;i++){const cx=ox+(i/(cc-1||1))*totW;const tw=mk(new THREE.BoxGeometry(7,6,5),0x08261a);tw.position.set(cx,3,hD/2+5);SC.add(tw);meshes.push(tw);const fan=mk(new THREE.CylinderGeometry(2,2,.5,10),0x051410);fan.position.set(cx,6.25,hD/2+5);SC.add(fan);meshes.push(fan);}
+  const sub=mk(new THREE.BoxGeometry(20,8,12),0x1e1000);sub.position.set(ox-18,4,0);SC.add(sub);meshes.push(sub);
+  for(let i=0;i<4;i++){const t=mk(new THREE.CylinderGeometry(1.2,1.3,4,8),0x2c1800);t.position.set(ox-18+(i-1.5)*4.5,4.5,-7.5);SC.add(t);meshes.push(t);}
+  const adm=mk(new THREE.BoxGeometry(18,7,14),0x0c1620);adm.position.set(totW/2-ox+14,3.5,-hD/2-9);SC.add(adm);meshes.push(adm);
+  const rd=new THREE.Mesh(new THREE.PlaneGeometry(totW+80,6),new THREE.MeshLambertMaterial({color:0x050912}));rd.rotation.x=-Math.PI/2;rd.position.set(0,.02,hD/2+13);SC.add(rd);meshes.push(rd);
+  document.getElementById('cvleg').innerHTML=`<div class="lgi"><div class="lgd" style="background:#0d2040"></div><span class="lgl">Server Halls</span></div><div class="lgi"><div class="lgd" style="background:#08261a"></div><span class="lgl">Cooling</span></div><div class="lgi"><div class="lgd" style="background:#1e1000"></div><span class="lgl">Substation</span></div><div class="lgi"><div class="lgd" style="background:#0c1620"></div><span class="lgl">Admin</span></div>`;
   renderFacStats(f);
 }
-
-function renderFacStats(f){
-  document.getElementById('fstats').innerHTML=`
-    <div class="fst"><div class="fstv">${fmtN(f.nChips)}</div><div class="fstl">Chips</div></div>
-    <div class="fst"><div class="fstv">${fmtN(f.nRacks)}</div><div class="fstl">Racks</div></div>
-    <div class="fst"><div class="fstv">${f.mw} MW</div><div class="fstl">IT Load</div></div>
-    <div class="fst"><div class="fstv">${f.acres} ac</div><div class="fstl">Land</div></div>`;
-}
-
-function buildFacility(){
-  const f=calcF();if(!f)return;
-  markDone(2);goStep(3);
-  document.getElementById('fsub').textContent=`${fmtN(f.nRacks)} racks · ${f.mw}MW · ${S.chip.name} — drag to orbit`;
-  setTimeout(()=>{if(!R)initThree();buildScene(f);},80);
-}
+function renderFacStats(f){document.getElementById('fstats').innerHTML=`<div class="fst"><div class="fstv">${fmtN(f.nChips)}</div><div class="fstl">Chips</div></div><div class="fst"><div class="fstv">${fmtN(f.nRacks)}</div><div class="fstl">Racks</div></div><div class="fst"><div class="fstv">${f.mw} MW</div><div class="fstl">IT Load</div></div><div class="fst"><div class="fstv">${f.acres} ac</div><div class="fstl">Land</div></div>`;}
+function buildFacility(){const f=calcF();if(!f)return;markDone(2);goStep(3);document.getElementById('fsub').textContent=`${fmtN(f.nRacks)} racks · ${f.mw}MW · ${S.chip.name} — drag to orbit`;setTimeout(()=>{if(!R)initThree();buildScene(f);},80);}
 function resetCam(){theta=.55;phi=1.05;camR=110;moveCam();}
 function toggleWF(){wf=!wf;SC.traverse(o=>{if(o.isMesh&&o.material)o.material.wireframe=wf;});}
-
-// ═══════════════════════════════════════════
-// STEP FLOW
-// ═══════════════════════════════════════════
 
 function goStep(n){
   S.step=n;
@@ -905,25 +1077,7 @@ function goStep(n){
   if(n>=4)markDone(3);
 }
 function markDone(n){document.getElementById('ts'+n)?.classList.add('done');}
-function ctab(tab,el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('tp-'+tab).classList.add('active');
-}
-
-// ═══════════════════════════════════════════
-// BOOT
-// ═══════════════════════════════════════════
-
-window.addEventListener('DOMContentLoaded',()=>{
-  initMap();
-  initRegionList();
-  initChipGrid();
-  initSliders();
-  goStep(1);
-  updateTB();
-});
+function ctab(tab,el){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('tp-'+tab).classList.add('active');}
 </script>
 </body>
 </html>
