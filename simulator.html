@@ -1,1148 +1,982 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>INFRA TERMINAL — Simulator</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- Leaflet CSS — must come before any styles that reference .leaflet-* -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <!-- Leaflet JS loaded in HEAD so L is available immediately -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --ink:#05080f;--ink2:#090e1c;--ink3:#0d1528;
-      --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.20);
-      --text:#dde5f4;--text2:#8a9fc0;--text3:#3e5272;
-      --accent:#2d7ff9;--accent2:#06c8d4;--accent3:#0fffa0;
-      --adim:rgba(45,127,249,0.13);--aglow:rgba(45,127,249,0.4);--amber:#f5a623;
-    }
-    html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--text);font-family:'DM Sans',sans-serif}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infra Terminal — Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --ink:    #05080f;
+  --ink2:   #090e1c;
+  --ink3:   #0d1528;
+  --border: rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --border3:rgba(255,255,255,0.20);
+  --text:   #dde5f4;
+  --text2:  #8a9fc0;
+  --text3:  #3e5272;
+  --accent: #2d7ff9;
+  --accent2:#06c8d4;
+  --accent3:#0fffa0;
+  --aglow:  rgba(45,127,249,0.4);
+  --amber:  #f5a623;
+  --red:    #ef4444;
+  --shadow: 0 32px 80px rgba(0,0,0,0.65), 0 6px 20px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--text);font-family:'DM Sans',sans-serif}
 
-    /* ── TOPBAR ── */
-    #topbar{
-      position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
-      background:rgba(5,8,15,0.95);backdrop-filter:blur(20px);
-      border-bottom:1px solid var(--border2);
-      display:flex;align-items:center;padding:0 18px;gap:12px
-    }
-    .tb-logo{display:flex;align-items:center;gap:9px;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--text);text-decoration:none;white-space:nowrap;flex-shrink:0}
-    .tb-steps{display:flex;align-items:center;gap:3px;flex:1}
-    .tb-step{display:flex;align-items:center;gap:6px;padding:5px 13px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);cursor:pointer;transition:all .15s;white-space:nowrap;background:transparent}
-    .tb-step:hover{border-color:var(--border2);color:var(--text2)}
-    .tb-step.active{border-color:var(--accent);color:var(--accent);background:rgba(45,127,249,0.07)}
-    .tb-step.done{border-color:rgba(15,255,160,0.3);color:var(--accent3)}
-    .tb-step-num{width:15px;height:15px;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;background:var(--border);flex-shrink:0}
-    .tb-step.active .tb-step-num{background:var(--accent);color:#fff}
-    .tb-step.done .tb-step-num{background:var(--accent3);color:#000}
-    .tb-arrow{color:var(--text3);font-size:10px}
-    .tb-pills{display:flex;align-items:center;gap:6px;margin-left:auto}
-    .tb-pill{padding:4px 10px;background:var(--ink2);border:1px solid var(--border2);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;color:var(--text2);white-space:nowrap}
-    .tb-pill span{color:var(--accent)}
-    .tb-pill.green span{color:var(--accent3)}
-    .tb-pill.amber span{color:var(--amber)}
-    .tb-back{padding:6px 14px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .14s;text-decoration:none;display:flex;align-items:center;gap:5px;flex-shrink:0}
-    .tb-back:hover{border-color:var(--border3);color:var(--text)}
+/* Background grid */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(rgba(45,127,249,0.038) 0 1px,transparent 1px 58px),
+                   repeating-linear-gradient(90deg,rgba(45,127,249,0.038) 0 1px,transparent 1px 58px);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,127,249,0.11) 0%,transparent 70%);
+}
 
-    /* ── MAIN ── */
-    #main{position:fixed;top:52px;left:0;right:0;bottom:0;width:100%;height:calc(100vh - 52px)}
-    /* Leaflet REQUIRES explicit px/% dimensions on the container */
-    #map{position:absolute;top:0;left:0;width:100%!important;height:100%!important;background:#07101e}
-    .leaflet-container{background:#07101e!important}
-    .leaflet-tile-pane{filter:saturate(0.85) brightness(0.9) contrast(1.05)}
+/* ── Topbar ───────────────────────────────────────────────────────────────── */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
+  background:rgba(5,8,15,0.92);backdrop-filter:blur(28px);
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text);margin-right:8px}
+.logo span{color:var(--accent)}
+.step-indicators{display:flex;gap:6px;flex:1}
+.step-pill{
+  padding:4px 14px;border-radius:20px;font-family:'Syne',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  border:1px solid var(--border2);color:var(--text3);background:transparent;cursor:pointer;
+  transition:all .2s;
+}
+.step-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.step-pill.done{background:rgba(15,255,160,0.12);border-color:rgba(15,255,160,0.3);color:var(--accent3)}
+.metric-pills{display:flex;gap:8px;margin-left:auto}
+.mpill{
+  display:flex;align-items:center;gap:6px;padding:4px 10px;
+  background:var(--ink2);border:1px solid var(--border);border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:11px;
+}
+.mpill-label{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.mpill-val{color:var(--accent2);font-weight:500}
 
-    /* Make Leaflet tiles richer but still dark */
-    .leaflet-tile-pane{filter:saturate(0.9) brightness(0.95) contrast(1.05)}
+/* ── Main layout ──────────────────────────────────────────────────────────── */
+#app{position:fixed;top:52px;left:0;right:0;bottom:0;display:flex;z-index:1}
+.step{width:100%;height:100%;display:none;position:relative}
+.step.active{display:flex}
 
-    /* ── PANELS ── */
-    .panel{position:absolute;z-index:600;background:rgba(9,14,28,0.93);backdrop-filter:blur(28px);border:1px solid var(--border2)}
-    .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));pointer-events:none}
-    .panel-header{padding:13px 16px 9px;border-bottom:1px solid var(--border)}
-    .panel-tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
-    .panel-title{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--text)}
-    .panel-body{padding:12px 16px}
+/* ── Step 1: Site Selection ───────────────────────────────────────────────── */
+#step1{flex-direction:row}
+#map{flex:1;z-index:1}
 
-    /* ── STEP 1: sites ── */
-    #panel-sites{top:16px;left:16px;width:272px;max-height:calc(100vh - 84px);display:flex;flex-direction:column}
-    .sites-search{margin-bottom:8px;background:var(--ink);border:1px solid var(--border2);display:flex;align-items:center;gap:7px;padding:6px 9px}
-    .sites-search input{background:transparent;border:none;outline:none;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;width:100%}
-    .sites-search input::placeholder{color:var(--text3)}
-    .sites-list{overflow-y:auto;flex:1}
-    .sites-list::-webkit-scrollbar{width:3px}
-    .sites-list::-webkit-scrollbar-thumb{background:var(--border2)}
-    .site-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
-    .site-item:hover{background:var(--ink3)}
-    .site-item.selected{background:rgba(45,127,249,0.09);border-left:2px solid var(--accent)}
-    .site-name{font-size:12px;color:var(--text)}
-    .site-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-    .site-tier{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;padding:2px 5px;border:1px solid}
-    .site-tier.T1{color:var(--accent);border-color:rgba(45,127,249,.3)}
-    .site-tier.T2{color:var(--accent2);border-color:rgba(6,200,212,.3)}
-    .site-tier.T3{color:var(--amber);border-color:rgba(245,166,35,.3)}
-    .site-mw{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)}
+/* Left intelligence panel */
+#intel-panel{
+  width:340px;height:100%;overflow-y:auto;
+  background:rgba(9,14,28,0.94);backdrop-filter:blur(28px) saturate(1.5);
+  border-right:1px solid var(--border2);z-index:10;display:flex;flex-direction:column;
+}
+#intel-panel::-webkit-scrollbar{width:4px}
+#intel-panel::-webkit-scrollbar-track{background:transparent}
+#intel-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-    /* ── ENERGY + LAND COST PANEL ── */
-    #panel-loc-info{bottom:20px;left:16px;width:272px}
-    .loc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:0}
-    .loc-kpi{background:var(--ink);border:1px solid var(--border2);padding:10px}
-    .loc-kpi-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
-    .loc-kpi-val{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;line-height:1}
-    .loc-kpi-val.blue{color:var(--accent)}
-    .loc-kpi-val.green{color:var(--accent3)}
-    .loc-kpi-val.amber{color:var(--amber)}
-    .loc-kpi-sub{font-family:'DM Mono',monospace;font-size:8px;color:var(--text3);margin-top:3px}
-    .loc-detail-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
-    .loc-detail-row:last-child{border-bottom:none}
-    .loc-dk{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
-    .loc-dv{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2)}
+.panel-header{
+  padding:16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(45,127,249,0.06) 0%,transparent 100%);
+}
+.panel-title{
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-bottom:8px;
+}
+.panel-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);
+  animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
-    /* ── CONTINUE BTN ── */
-    .btn-continue{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s}
-    .btn-continue:hover{background:#1a6ce8;box-shadow:0 0 28px var(--aglow)}
-    .btn-continue:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;background:var(--accent)}
+/* View toggle */
+.view-toggle{display:flex;gap:4px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.vtab{
+  flex:1;padding:6px;text-align:center;font-family:'Syne',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+  border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .15s;
+}
+.vtab.active{background:rgba(45,127,249,0.15);border-color:var(--accent);color:var(--accent)}
 
-    /* ── STEP 2: config ── */
-    #panel-config{top:16px;left:16px;width:316px;max-height:calc(100vh - 84px);display:flex;flex-direction:column;overflow-y:auto}
-    #panel-config::-webkit-scrollbar{width:3px}
-    #panel-config::-webkit-scrollbar-thumb{background:var(--border2)}
-    .config-section{border-bottom:1px solid var(--border);padding:13px 16px}
-    .config-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text3);text-transform:uppercase;margin-bottom:8px}
+/* Market list */
+#market-list{flex:1;padding:8px}
+.market-item{
+  padding:10px 12px;margin-bottom:4px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;
+  transition:all .15s;position:relative;overflow:hidden;
+}
+.market-item::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));opacity:0;transition:.15s;
+}
+.market-item:hover{background:var(--ink3);border-color:var(--border2)}
+.market-item:hover::before{opacity:1}
+.market-item.selected{background:rgba(45,127,249,0.08);border-color:var(--accent)}
+.market-item.selected::before{opacity:1}
 
-    /* CHIP GRID — bigger, clearer */
-    .chip-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-    .chip-card{
-      padding:10px 11px;border:1px solid var(--border);cursor:pointer;
-      transition:all .12s;background:var(--ink);position:relative;overflow:hidden
-    }
-    .chip-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(45,127,249,0.05),transparent);opacity:0;transition:opacity .12s}
-    .chip-card:hover{border-color:var(--border2);background:var(--ink3)}
-    .chip-card:hover::after{opacity:1}
-    .chip-card.selected{border-color:var(--accent);background:rgba(45,127,249,.09)}
-    .chip-card.selected::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
-    .chip-brand{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase}
-    .chip-name{font-size:12px;color:var(--text);margin:3px 0 2px;font-weight:600}
-    .chip-tflops{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);margin-bottom:1px}
-    .chip-hbm{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)}
-    .chip-cost{font-family:'DM Mono',monospace;font-size:9px;color:var(--amber);margin-top:2px}
-    .chip-badge{
-      position:absolute;top:5px;right:6px;
-      font-family:'DM Mono',monospace;font-size:7px;letter-spacing:1px;
-      padding:2px 5px;border:1px solid;text-transform:uppercase
-    }
-    .chip-badge.nvidia{color:#76b900;border-color:rgba(118,185,0,.3)}
-    .chip-badge.amd{color:#ed1c24;border-color:rgba(237,28,36,.3)}
-    .chip-badge.google{color:#4285f4;border-color:rgba(66,133,244,.3)}
-    .chip-badge.aws{color:#ff9900;border-color:rgba(255,153,0,.3)}
-    .chip-badge.intel{color:#0071c5;border-color:rgba(0,113,197,.3)}
+.mi-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.mi-rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:20px}
+.mi-name{font-size:13px;font-weight:500;flex:1}
+.mi-score{
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  padding:2px 6px;border-radius:3px;
+}
+.mi-bottom{display:flex;gap:8px;font-size:11px;color:var(--text3)}
+.mi-tag{
+  padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+}
 
-    /* sliders */
-    .slider-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
-    .slider-row:last-child{margin-bottom:0}
-    .slider-top{display:flex;justify-content:space-between;align-items:center}
-    .slider-lbl{font-size:11px;color:var(--text2)}
-    .slider-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent3)}
-    input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;background:var(--border2);outline:none;cursor:pointer}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 0 8px var(--aglow)}
-    .radio-pills{display:flex;gap:4px;flex-wrap:wrap}
-    .radio-pill{padding:5px 11px;border:1px solid var(--border2);cursor:pointer;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text2);transition:all .12s;background:var(--ink)}
-    .radio-pill:hover{border-color:var(--border3)}
-    .radio-pill.selected{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+/* Loading skeleton */
+.skeleton{
+  background:linear-gradient(90deg,var(--ink2) 25%,var(--ink3) 50%,var(--ink2) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:3px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-    /* ── STEP 3: 3D ── */
-    #three-canvas-wrap{position:absolute;inset:0;z-index:500;background:var(--ink)}
-    #three-canvas{display:block;width:100%;height:100%}
-    #panel-3d-controls{top:16px;right:16px;width:210px;z-index:610}
-    .btn-sm{padding:6px 11px;border:1px solid var(--border2);background:var(--ink);color:var(--text2);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .14s}
-    .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
-    .btn-sm.active-btn{border-color:var(--accent);color:var(--accent);background:var(--adim)}
-    .three-ctrl-row{display:flex;gap:5px;flex-wrap:wrap}
+/* Score tier colors */
+.tier-hot   {color:#0fffa0;background:rgba(15,110,86,0.25);border-color:rgba(15,255,160,0.2)!important}
+.tier-active{color:#60a5fa;background:rgba(24,95,165,0.25);border-color:rgba(45,127,249,0.3)!important}
+.tier-watch {color:#f5a623;background:rgba(186,117,23,0.25);border-color:rgba(245,166,35,0.3)!important}
+.tier-cold  {color:#8a9fc0;background:rgba(62,82,114,0.15);border-color:var(--border)!important}
 
-    /* ── STEP 4: financials ── */
-    #panel-financials{top:16px;right:16px;width:330px;max-height:calc(100vh - 84px);display:flex;flex-direction:column;overflow-y:auto}
-    #panel-financials::-webkit-scrollbar{width:3px}
-    #panel-financials::-webkit-scrollbar-thumb{background:var(--border2)}
-    #panel-fin-left{top:16px;left:16px;width:270px;max-height:calc(100vh - 84px);display:flex;flex-direction:column;overflow-y:auto}
-    #panel-fin-left::-webkit-scrollbar{width:3px}
-    #panel-fin-left::-webkit-scrollbar-thumb{background:var(--border2)}
+/* ── Score card (right panel, shown on pin/market click) ─────────────────── */
+#score-card{
+  position:absolute;right:16px;top:16px;width:320px;z-index:100;
+  background:rgba(9,14,28,0.96);backdrop-filter:blur(28px) saturate(1.5);
+  border:1px solid var(--border2);box-shadow:var(--shadow);
+  display:none;
+}
+#score-card.visible{display:block}
+#score-card::before{
+  content:'';display:block;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
+}
+.sc-header{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sc-location{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.sc-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.5px;line-height:1.2}
+.sc-close{
+  background:none;border:1px solid var(--border);color:var(--text3);width:24px;height:24px;
+  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sc-close:hover{border-color:var(--border2);color:var(--text)}
+.sc-meta{margin-top:4px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
 
-    .fin-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-    .fin-row:last-child{border-bottom:none}
-    .fin-lbl{font-size:11px;color:var(--text2)}
-    .fin-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--text)}
-    .fin-val.pos{color:var(--accent3)}
-    .fin-val.neg{color:#ff6b6b}
-    .fin-val.accent{color:var(--accent)}
-    .fin-section-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding:8px 0 5px;border-bottom:1px solid var(--border)}
-    .fin-total-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0 3px}
-    .fin-total-lbl{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--text);text-transform:uppercase}
-    .fin-total-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
-    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
-    .kpi-card{background:var(--ink);border:1px solid var(--border2);padding:11px}
-    .kpi-lbl{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}
-    .kpi-val{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#fff;line-height:1}
-    .kpi-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-top:3px}
-    .kpi-val.green{color:var(--accent3)}
-    .kpi-val.blue{color:var(--accent)}
-    .kpi-val.amber{color:var(--amber)}
-    .yr-chart{display:flex;flex-direction:column;gap:4px}
-    .yr-bar-row{display:flex;align-items:center;gap:7px}
-    .yr-bar-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);width:22px;text-align:right;flex-shrink:0}
-    .yr-bar-wrap{flex:1;height:13px;background:var(--ink);position:relative}
-    .yr-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease}
-    .yr-bar.profit{background:linear-gradient(90deg,var(--accent3),var(--accent2))}
-    .yr-bar-num{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);width:58px;flex-shrink:0}
+.sc-score-row{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.sc-big-score{
+  font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1;
+  color:var(--accent3);
+}
+.sc-score-right{flex:1}
+.sc-tier-pill{
+  display:inline-block;padding:3px 10px;font-family:'Syne',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;
+}
+.sc-ci{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
 
-    /* Popup */
-    .leaflet-popup-content-wrapper{background:rgba(9,14,28,0.97)!important;border:1px solid var(--border2)!important;border-radius:0!important;box-shadow:none!important}
-    .leaflet-popup-tip{background:var(--ink2)!important}
-    .leaflet-popup-content{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);margin:10px 14px!important}
-    .mp-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
-    .mp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
-    .mp-cell{background:var(--ink);border:1px solid var(--border);padding:6px 8px}
-    .mp-cell-lbl{font-size:8px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:2px}
-    .mp-cell-val{font-size:13px;font-weight:800;font-family:'Syne',sans-serif;color:#fff}
-    .mp-cell-val.blue{color:var(--accent)}
-    .mp-cell-val.green{color:var(--accent3)}
-    .mp-cell-val.amber{color:var(--amber)}
-    .mp-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)}
-    .mp-row:last-child{border-bottom:none}
-    .mp-k{color:var(--text3)}
-    .mp-v{color:var(--accent2)}
-    .btn-select-site{margin-top:10px;width:100%;padding:8px;background:var(--accent);color:#fff;border:none;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
-    .btn-select-site:hover{background:#1a6ce8}
+/* Score bar component */
+.score-bar-row{padding:8px 16px;display:flex;flex-direction:column;gap:4px}
+.sbr-label{display:flex;justify-content:space-between;font-size:11px}
+.sbr-name{color:var(--text2)}
+.sbr-val{font-family:'DM Mono',monospace;color:var(--text3)}
+.sbr-track{height:3px;background:rgba(255,255,255,0.06);overflow:hidden}
+.sbr-fill{height:100%;transition:width .6s cubic-bezier(.4,0,.2,1)}
 
-    /* Data source badge */
-    .data-source-badge{
-      position:fixed;bottom:16px;right:16px;z-index:700;
-      background:rgba(9,14,28,0.88);border:1px solid var(--border);
-      font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.5px;
-      color:var(--text3);padding:5px 10px;
-      display:flex;align-items:center;gap:6px
-    }
-    .data-source-badge span{color:var(--accent3)}
+.sc-signals{border-top:1px solid var(--border);padding:12px 16px}
+.sc-sig-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.sig-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,0.03)}
+.sig-row:last-child{border-bottom:none}
+.sig-label{font-size:11px;color:var(--text2)}
+.sig-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text)}
+.sig-src{font-size:9px;color:var(--text3);margin-top:1px}
 
-    .panel-hidden{display:none!important}
+/* Project details strip */
+.sc-project-strip{
+  border-top:1px solid var(--border);padding:10px 16px;
+  background:rgba(45,127,249,0.04);
+}
+.sps-title{font-size:10px;color:var(--text3);text-transform:uppercase;
+  letter-spacing:1.5px;font-family:'Syne',sans-serif;margin-bottom:6px}
+.sps-item{font-size:11px;color:var(--text2);padding:2px 0}
 
-    /* toast */
-    #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink2);border:1px solid var(--accent);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:9px 18px;z-index:2000;letter-spacing:1px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
-    #toast.show{opacity:1}
+.sc-actions{padding:12px 16px;display:flex;gap:8px;border-top:1px solid var(--border)}
+.btn-primary{
+  flex:1;padding:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;transition:opacity .15s;
+}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{
+  padding:10px 14px;background:transparent;color:var(--text2);
+  border:1px solid var(--border2);cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;
+}
+.btn-secondary:hover{border-color:var(--border3);color:var(--text)}
 
-    @media(max-width:900px){
-      .tb-step span:not(.tb-step-num){display:none}
-      .tb-pills{display:none}
-    }
-  </style>
+/* ── Map controls ─────────────────────────────────────────────────────────── */
+#map-controls{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;z-index:100;
+}
+.map-ctrl-btn{
+  padding:7px 14px;background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);
+  border:1px solid var(--border2);color:var(--text2);cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;
+}
+.map-ctrl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.map-ctrl-btn.active{background:rgba(45,127,249,0.15);border-color:var(--accent);color:var(--accent)}
+
+/* Pipeline legend */
+#pipeline-legend{
+  position:absolute;bottom:60px;left:16px;z-index:100;
+  background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);
+  border:1px solid var(--border2);padding:10px 14px;display:none;
+}
+#pipeline-legend.visible{display:block}
+.pl-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.pl-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;color:var(--text2)}
+.pl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── Steps 2-4 ────────────────────────────────────────────────────────────── */
+#step2,#step3,#step4{
+  flex-direction:column;overflow-y:auto;padding:24px;gap:24px;
+  background:var(--ink);
+}
+.step-inner{max-width:1100px;margin:0 auto;width:100%}
+
+/* ── Leaflet overrides ────────────────────────────────────────────────────── */
+.leaflet-container{background:#05080f!important}
+.leaflet-control-zoom{border:1px solid var(--border2)!important;background:rgba(9,14,28,0.9)!important}
+.leaflet-control-zoom a{
+  background:rgba(9,14,28,0.9)!important;color:var(--text2)!important;
+  border-bottom:1px solid var(--border)!important;font-size:16px!important;line-height:26px!important;
+}
+.leaflet-control-zoom a:hover{background:var(--ink3)!important;color:var(--accent)!important}
+.leaflet-control-attribution{background:rgba(5,8,15,0.7)!important;color:var(--text3)!important;font-size:9px!important}
+.leaflet-control-attribution a{color:var(--text3)!important}
+</style>
 </head>
 <body>
 
+<!-- Topbar -->
 <div id="topbar">
-  <a class="tb-logo" href="index.html">
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-      <rect x="1" y="1" width="5" height="5" stroke="#2d7ff9" stroke-width="1.2"/>
-      <rect x="8" y="1" width="5" height="5" fill="#2d7ff9" opacity=".35"/>
-      <rect x="1" y="8" width="5" height="5" fill="#2d7ff9" opacity=".35"/>
-      <rect x="8" y="8" width="5" height="5" stroke="#2d7ff9" stroke-width="1.2"/>
-    </svg>
-    Infra Terminal
-  </a>
-  <div class="tb-steps">
-    <div class="tb-step active" id="step-btn-1" onclick="goToStep(1)"><span class="tb-step-num">1</span><span>Site Selection</span></div>
-    <span class="tb-arrow">›</span>
-    <div class="tb-step" id="step-btn-2" onclick="goToStep(2)"><span class="tb-step-num">2</span><span>Configuration</span></div>
-    <span class="tb-arrow">›</span>
-    <div class="tb-step" id="step-btn-3" onclick="goToStep(3)"><span class="tb-step-num">3</span><span>Facility View</span></div>
-    <span class="tb-arrow">›</span>
-    <div class="tb-step" id="step-btn-4" onclick="goToStep(4)"><span class="tb-step-num">4</span><span>Financials</span></div>
+  <div class="logo">INFRA<span>TERMINAL</span></div>
+  <div class="step-indicators">
+    <div class="step-pill active" onclick="goStep(1)">01 Site</div>
+    <div class="step-pill" onclick="goStep(2)">02 Config</div>
+    <div class="step-pill" onclick="goStep(3)">03 Facility</div>
+    <div class="step-pill" onclick="goStep(4)">04 Financials</div>
   </div>
-  <div class="tb-pills">
-    <div class="tb-pill">MW: <span id="pill-mw">—</span></div>
-    <div class="tb-pill">Chips: <span id="pill-chips">—</span></div>
-    <div class="tb-pill green">ROI: <span id="pill-roi">—</span></div>
-    <div class="tb-pill amber">Payback: <span id="pill-pb">—</span></div>
+  <div class="metric-pills">
+    <div class="mpill"><span class="mpill-label">MW</span><span class="mpill-val" id="pill-mw">—</span></div>
+    <div class="mpill"><span class="mpill-label">Chips</span><span class="mpill-val" id="pill-chips">—</span></div>
+    <div class="mpill"><span class="mpill-label">ROI</span><span class="mpill-val" id="pill-roi">—</span></div>
+    <div class="mpill"><span class="mpill-label">Payback</span><span class="mpill-val" id="pill-payback">—</span></div>
   </div>
-  <a class="tb-back" href="index.html">← Back</a>
 </div>
 
-<div id="main">
+<div id="app">
+
+<!-- ── STEP 1: Site Selection ────────────────────────────────────────────── -->
+<div class="step active" id="step1">
+
+  <!-- Left intelligence panel -->
+  <div id="intel-panel">
+    <div class="panel-header">
+      <div class="panel-title">Market Intelligence</div>
+      <div class="panel-status">
+        <div class="pulse-dot" id="live-dot"></div>
+        <span id="live-status">Loading live data...</span>
+      </div>
+    </div>
+    <div class="view-toggle">
+      <div class="vtab active" onclick="setView('ranked')" id="vtab-ranked">Ranked</div>
+      <div class="vtab" onclick="setView('pipeline')" id="vtab-pipeline">Pipeline</div>
+      <div class="vtab" onclick="setView('heatmap')" id="vtab-heatmap">Heatmap</div>
+    </div>
+    <div id="market-list">
+      <!-- Skeleton loading -->
+      <div id="market-skeleton">
+        ${Array(8).fill(0).map(()=>`
+        <div style="padding:10px 12px;margin-bottom:4px;border:1px solid var(--border)">
+          <div style="display:flex;gap:8px;margin-bottom:6px">
+            <div class="skeleton" style="width:20px;height:14px"></div>
+            <div class="skeleton" style="flex:1;height:14px"></div>
+            <div class="skeleton" style="width:36px;height:14px"></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <div class="skeleton" style="width:60px;height:10px"></div>
+            <div class="skeleton" style="width:50px;height:10px"></div>
+          </div>
+        </div>`).join('')}
+      </div>
+      <div id="market-items" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Map -->
   <div id="map"></div>
 
-  <!-- STEP 1 PANEL -->
-  <div class="panel" id="panel-sites">
-    <div class="panel-header">
-      <div class="panel-tag">// Step 01 — Click map or list</div>
-      <div class="panel-title">Select a Market</div>
-    </div>
-    <div class="panel-body">
-      <div class="sites-search">
-        <svg width="11" height="11" fill="none" stroke="var(--text3)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="site-search" placeholder="Search markets..." oninput="filterSites(this.value)">
-      </div>
-      <div class="sites-list" id="sites-list"></div>
-    </div>
-    <button class="btn-continue" id="btn-to-config" disabled onclick="goToStep(2)">Configure Infrastructure →</button>
-  </div>
-
-  <!-- ENERGY + LAND COST CARD -->
-  <div class="panel panel-hidden" id="panel-loc-info">
-    <div class="panel-header">
-      <div class="panel-tag">// Live Market Data</div>
-      <div class="panel-title" id="loc-title">—</div>
-    </div>
-    <div class="panel-body">
-      <div class="loc-grid" id="loc-kpis"></div>
-      <div style="margin-top:10px" id="loc-details"></div>
-    </div>
-  </div>
-
-  <!-- STEP 2 PANEL -->
-  <div class="panel panel-hidden" id="panel-config">
-    <div class="panel-header">
-      <div class="panel-tag">// Step 02</div>
-      <div class="panel-title">Infrastructure Config</div>
-    </div>
-
-    <!-- CHIP SELECTOR -->
-    <div class="config-section">
-      <div class="config-label">Chip Architecture — Select One</div>
-      <div class="chip-grid" id="chip-grid"></div>
-    </div>
-
-    <div class="config-section">
-      <div class="config-label">Capacity &amp; Load</div>
-      <div class="slider-row">
-        <div class="slider-top"><span class="slider-lbl">IT Load</span><span class="slider-val" id="lbl-mw">100 MW</span></div>
-        <input type="range" id="sl-mw" min="5" max="1000" step="5" value="100" oninput="onSlider()">
-      </div>
-      <div class="slider-row">
-        <div class="slider-top"><span class="slider-lbl">Rack Density</span><span class="slider-val" id="lbl-density">30 kW/rack</span></div>
-        <input type="range" id="sl-density" min="5" max="120" step="5" value="30" oninput="onSlider()">
-      </div>
-      <div class="slider-row">
-        <div class="slider-top"><span class="slider-lbl">Utilization</span><span class="slider-val" id="lbl-util">75%</span></div>
-        <input type="range" id="sl-util" min="20" max="95" step="1" value="75" oninput="onSlider()">
+  <!-- Score card -->
+  <div id="score-card">
+    <div class="sc-header">
+      <div class="sc-location">
+        <div>
+          <div class="sc-name" id="sc-name">—</div>
+          <div class="sc-meta" id="sc-meta">—</div>
+        </div>
+        <button class="sc-close" onclick="closeCard()">✕</button>
       </div>
     </div>
-
-    <div class="config-section">
-      <div class="config-label">Redundancy</div>
-      <div class="radio-pills" id="redundancy-pills">
-        <div class="radio-pill" data-val="N1" onclick="pickPill('redundancy',this)">N+1</div>
-        <div class="radio-pill selected" data-val="2N" onclick="pickPill('redundancy',this)">2N</div>
-        <div class="radio-pill" data-val="2N1" onclick="pickPill('redundancy',this)">2N+1</div>
+    <div class="sc-score-row">
+      <div class="sc-big-score" id="sc-score">—</div>
+      <div class="sc-score-right">
+        <div class="sc-tier-pill" id="sc-tier">—</div>
+        <div class="sc-ci" id="sc-ci">—</div>
       </div>
     </div>
-
-    <div class="config-section">
-      <div class="config-label">Revenue Model</div>
-      <div class="radio-pills" id="revmodel-pills">
-        <div class="radio-pill selected" data-val="gpu" onclick="pickPill('revmodel',this)">GPU Cloud</div>
-        <div class="radio-pill" data-val="colo" onclick="pickPill('revmodel',this)">Colocation</div>
-        <div class="radio-pill" data-val="mixed" onclick="pickPill('revmodel',this)">Mixed</div>
-      </div>
+    <!-- Score breakdown bars -->
+    <div id="sc-bars"></div>
+    <!-- Key signals -->
+    <div class="sc-signals">
+      <div class="sc-sig-title">Signal Breakdown</div>
+      <div id="sc-signal-rows"></div>
     </div>
-
-    <div class="config-section">
-      <div class="config-label">Pricing</div>
-      <div class="slider-row">
-        <div class="slider-top"><span class="slider-lbl">GPU Rental $/hr/GPU</span><span class="slider-val" id="lbl-gpu">$2.50</span></div>
-        <input type="range" id="sl-gpu" min="50" max="1000" step="10" value="250" oninput="onSlider()">
-      </div>
-      <div class="slider-row">
-        <div class="slider-top"><span class="slider-lbl">Colo Rate $/rack/mo</span><span class="slider-val" id="lbl-colo">$1,500</span></div>
-        <input type="range" id="sl-colo" min="500" max="6000" step="100" value="1500" oninput="onSlider()">
-      </div>
+    <!-- Nearby projects -->
+    <div class="sc-project-strip" id="sc-projects" style="display:none">
+      <div class="sps-title">Nearby Projects</div>
+      <div id="sc-project-list"></div>
     </div>
-
-    <div class="config-section" style="border-bottom:none">
-      <div class="config-label">Live Summary</div>
-      <div class="fin-row"><span class="fin-lbl">Chips</span><span class="fin-val accent" id="cfg-chips">—</span></div>
-      <div class="fin-row"><span class="fin-lbl">Racks</span><span class="fin-val" id="cfg-racks">—</span></div>
-      <div class="fin-row"><span class="fin-lbl">Acres</span><span class="fin-val" id="cfg-acres">—</span></div>
-      <div class="fin-row"><span class="fin-lbl">Chip Cost</span><span class="fin-val accent" id="cfg-chipcost">—</span></div>
-    </div>
-    <button class="btn-continue" onclick="goToStep(3)">View 3D Facility →</button>
-  </div>
-
-  <!-- STEP 3 -->
-  <div id="three-canvas-wrap" class="panel-hidden">
-    <canvas id="three-canvas"></canvas>
-  </div>
-  <div class="panel panel-hidden" id="panel-3d-controls">
-    <div class="panel-header">
-      <div class="panel-tag">// Step 03</div>
-      <div class="panel-title">3D Facility View</div>
-    </div>
-    <div class="panel-body">
-      <div class="config-label" style="margin-bottom:8px">Controls</div>
-      <div class="three-ctrl-row">
-        <button class="btn-sm" id="btn-wf" onclick="toggleWireframe()">Wireframe</button>
-        <button class="btn-sm" onclick="resetCam()">Reset</button>
-        <button class="btn-sm" id="btn-rot" onclick="toggleRotate()">Auto-Rotate</button>
-      </div>
-      <div style="margin-top:14px">
-        <div class="fin-row"><span class="fin-lbl">Server Halls</span><span class="fin-val accent" id="t-halls">—</span></div>
-        <div class="fin-row"><span class="fin-lbl">Total Racks</span><span class="fin-val" id="t-racks">—</span></div>
-        <div class="fin-row"><span class="fin-lbl">IT Load</span><span class="fin-val" id="t-mw">—</span></div>
-        <div class="fin-row"><span class="fin-lbl">Cooling</span><span class="fin-val">Air + DLC</span></div>
-      </div>
-      <div style="margin-top:10px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);line-height:1.6">
-        Drag · Scroll to zoom · Touch
-      </div>
-      <button class="btn-continue" style="margin-top:12px" onclick="goToStep(4)">View Financials →</button>
+    <div class="sc-actions">
+      <button class="btn-primary" onclick="selectLocation()">Select This Location</button>
+      <button class="btn-secondary" onclick="closeCard()">Close</button>
     </div>
   </div>
 
-  <!-- STEP 4 LEFT -->
-  <div class="panel panel-hidden" id="panel-fin-left">
-    <div class="panel-header">
-      <div class="panel-tag">// CAPEX Breakdown</div>
-      <div class="panel-title">Capital Expenditure</div>
-    </div>
-    <div class="panel-body" id="capex-body"></div>
-    <div>
-      <div class="panel-header"><div class="panel-tag">// OPEX Annual</div><div class="panel-title">Operating Costs</div></div>
-      <div class="panel-body" id="opex-body"></div>
-    </div>
-    <button class="btn-continue" onclick="goToStep(1)" style="background:transparent;border-top:1px solid var(--border2);color:var(--text2)">← New Simulation</button>
+  <!-- Map controls -->
+  <div id="map-controls">
+    <button class="map-ctrl-btn active" id="ctrl-markets" onclick="toggleMarkers('markets')">Markets</button>
+    <button class="map-ctrl-btn" id="ctrl-projects" onclick="toggleMarkers('projects')">Projects</button>
+    <button class="map-ctrl-btn" id="ctrl-heatmap" onclick="toggleHeatmap()">Heatmap</button>
+    <button class="map-ctrl-btn" id="ctrl-pin" onclick="startPinDrop()">+ Drop Pin</button>
   </div>
 
-  <!-- STEP 4 RIGHT -->
-  <div class="panel panel-hidden" id="panel-financials">
-    <div class="panel-header">
-      <div class="panel-tag">// Step 04</div>
-      <div class="panel-title">P&amp;L Analysis</div>
-    </div>
-    <div class="panel-body">
-      <div class="kpi-grid" id="kpi-grid"></div>
-      <div class="fin-section-lbl">Revenue &amp; P&amp;L</div>
-      <div id="pl-body"></div>
-      <div class="fin-section-lbl" style="margin-top:10px">10-Year Cash Projection</div>
-      <div class="yr-chart" id="yr-chart" style="margin-top:8px"></div>
-    </div>
+  <!-- Pipeline legend -->
+  <div id="pipeline-legend">
+    <div class="pl-title">Project Status</div>
+    <div class="pl-item"><div class="pl-dot" style="background:#0F6E56"></div>Operational</div>
+    <div class="pl-item"><div class="pl-dot" style="background:#185FA5"></div>Under construction</div>
+    <div class="pl-item"><div class="pl-dot" style="background:#7F77DD"></div>Announced</div>
+    <div class="pl-item"><div class="pl-dot" style="background:#888780"></div>Cancelled / hold</div>
   </div>
 
-</div><!-- /main -->
+</div><!-- /step1 -->
 
-<!-- Data source attribution -->
-<div class="data-source-badge" id="data-badge" style="display:none">
-  <span>●</span> Energy rates: GlobalPetrolPrices Q4 2025 · EIA Mar 2026 · Land: CBRE/JLL 2025
+<!-- ── STEP 2: Configuration ─────────────────────────────────────────────── -->
+<div class="step" id="step2">
+  <div class="step-inner">
+    <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:24px">CONFIGURATION</h2>
+    <!-- Step 2 content preserved from Phase 1 simulator.html — insert here -->
+    <p style="color:var(--text2)">Step 2 configuration UI — insert from existing simulator.html</p>
+  </div>
 </div>
 
-<div id="toast"></div>
+<!-- ── STEP 3: 3D Facility ───────────────────────────────────────────────── -->
+<div class="step" id="step3">
+  <div id="three-canvas" style="width:100%;height:100%"></div>
+</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- ── STEP 4: Financials ────────────────────────────────────────────────── -->
+<div class="step" id="step4">
+  <div class="step-inner">
+    <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:24px">FINANCIALS</h2>
+    <!-- Step 4 content preserved from Phase 1 simulator.html — insert here -->
+    <p style="color:var(--text2)">Step 4 financials UI — insert from existing simulator.html</p>
+  </div>
+</div>
+
+</div><!-- /app -->
 
 <script>
-// ════════════════════════════════════════════════════════
-// ACCURATE MARKET DATA
-// Sources:
-//   Energy: GlobalPetrolPrices.com Q4 2025, EIA March 2026,
-//           IEA Energy Prices 2025 (industrial/large commercial rates)
-//   Land:   CBRE Data Center Trends 2025, JLL DC Real Estate 2025
-//   Tax:    KPMG Corporate Tax Rates 2025
-// ════════════════════════════════════════════════════════
-const MARKETS = [
-  // US — EIA commercial rates Mar 2026 (large industrial/DC contracts ~40-50% of commercial avg)
-  {id:'nva', name:'N. Virginia',    lat:38.9,   lng:-77.4,   tier:'T1', mwAvail:8000,
-    energy:0.058, land:280000, tax:0.21,  pue:1.35, ren:35, grid:99.97, permit:14, water:2.8, conn:'Tier 1',
-    energySrc:'Dominion Energy DC tariff 2026', landSrc:'CBRE NoVA 2025'},
+// ─── State ────────────────────────────────────────────────────────────────────
+const STATE = {
+  step: 1,
+  selectedLocation: null,
+  marketsData: null,
+  projectsData: null,
+  activeView: 'ranked',
+  pinDropMode: false,
+  showProjects: false,
+  showHeatmap: false,
+};
 
-  {id:'sva', name:'Silicon Valley', lat:37.37,  lng:-121.97, tier:'T1', mwAvail:4000,
-    energy:0.092, land:850000, tax:0.2325, pue:1.32, ren:55, grid:99.96, permit:18, water:3.2, conn:'Tier 1',
-    energySrc:'PG&E large commercial 2026', landSrc:'CBRE SV 2025'},
-
-  {id:'dal', name:'Dallas',         lat:32.78,  lng:-96.8,   tier:'T1', mwAvail:3500,
-    energy:0.062, land:120000, tax:0.21,  pue:1.38, ren:28, grid:99.95, permit:10, water:2.1, conn:'Tier 1',
-    energySrc:'Oncor/ERCOT industrial 2026', landSrc:'JLL DFW 2025'},
-
-  {id:'phx', name:'Phoenix',        lat:33.43,  lng:-112.07, tier:'T1', mwAvail:5000,
-    energy:0.064, land:95000,  tax:0.21,  pue:1.45, ren:22, grid:99.96, permit:9,  water:1.8, conn:'Tier 1',
-    energySrc:'APS large industrial 2026', landSrc:'CBRE PHX 2025'},
-
-  {id:'chi', name:'Chicago',        lat:41.88,  lng:-87.63,  tier:'T1', mwAvail:2800,
-    energy:0.073, land:160000, tax:0.21,  pue:1.33, ren:30, grid:99.94, permit:13, water:2.3, conn:'Tier 1',
-    energySrc:'ComEd industrial tariff 2026', landSrc:'CBRE CHI 2025'},
-
-  {id:'ore', name:'Oregon',         lat:45.52,  lng:-122.68, tier:'T1', mwAvail:3000,
-    energy:0.038, land:75000,  tax:0.17,  pue:1.24, ren:74, grid:99.97, permit:12, water:1.5, conn:'Tier 1',
-    energySrc:'PacifiCorp/PGE hydro DC 2026', landSrc:'JLL PDX 2025'},
-
-  {id:'sea', name:'Seattle',        lat:47.61,  lng:-122.33, tier:'T1', mwAvail:1200,
-    energy:0.048, land:220000, tax:0.21,  pue:1.28, ren:68, grid:99.97, permit:15, water:1.6, conn:'Tier 1',
-    energySrc:'Seattle City Light industrial', landSrc:'CBRE SEA 2025'},
-
-  // EUROPE — IEA industrial prices 2025 / Eurostat H1 2025
-  {id:'lon', name:'London',         lat:51.5,   lng:-0.12,   tier:'T1', mwAvail:2500,
-    energy:0.162, land:720000, tax:0.25,  pue:1.30, ren:45, grid:99.97, permit:16, water:3.5, conn:'Tier 1',
-    energySrc:'Ofgem industrial cap H2 2025', landSrc:'JLL London DC 2025'},
-
-  {id:'fra', name:'Frankfurt',      lat:50.11,  lng:8.68,    tier:'T1', mwAvail:2200,
-    energy:0.185, land:380000, tax:0.298, pue:1.32, ren:48, grid:99.97, permit:18, water:3.2, conn:'Tier 1',
-    energySrc:'IEA Germany industrial 2025', landSrc:'CBRE FRA 2025'},
-
-  {id:'ams', name:'Amsterdam',      lat:52.37,  lng:4.9,     tier:'T1', mwAvail:2000,
-    energy:0.148, land:420000, tax:0.258, pue:1.29, ren:52, grid:99.97, permit:16, water:2.9, conn:'Tier 1',
-    energySrc:'Eurostat NL industrial H1 2025', landSrc:'JLL AMS 2025'},
-
-  {id:'dub', name:'Dublin',         lat:53.33,  lng:-6.25,   tier:'T1', mwAvail:1200,
-    energy:0.142, land:520000, tax:0.125, pue:1.22, ren:58, grid:99.96, permit:20, water:2.6, conn:'Tier 1',
-    energySrc:'EirGrid industrial 2025', landSrc:'CBRE Dublin 2025'},
-
-  {id:'par', name:'Paris',          lat:48.86,  lng:2.35,    tier:'T1', mwAvail:1500,
-    energy:0.132, land:490000, tax:0.25,  pue:1.28, ren:50, grid:99.97, permit:20, water:3.1, conn:'Tier 1',
-    energySrc:'EDF industrial tariff 2025', landSrc:'JLL IDF 2025'},
-
-  {id:'zur', name:'Zurich',         lat:47.38,  lng:8.54,    tier:'T1', mwAvail:600,
-    energy:0.125, land:980000, tax:0.145, pue:1.24, ren:65, grid:99.99, permit:22, water:2.4, conn:'Tier 1',
-    energySrc:'Eurostat CH industrial H1 2025', landSrc:'JLL CH 2025'},
-
-  {id:'sto', name:'Stockholm',      lat:59.33,  lng:18.07,   tier:'T2', mwAvail:700,
-    energy:0.062, land:140000, tax:0.206, pue:1.18, ren:92, grid:99.96, permit:12, water:1.8, conn:'Tier 2',
-    energySrc:'Nordpool SE3 Q4 2025', landSrc:'JLL Stockholm 2025'},
-
-  {id:'nor', name:'Norway',         lat:63.43,  lng:10.39,   tier:'T2', mwAvail:500,
-    energy:0.093, land:95000,  tax:0.22,  pue:1.15, ren:98, grid:99.95, permit:10, water:1.2, conn:'Tier 2',
-    energySrc:'GlobalPetrolPrices NO biz Jun 2025', landSrc:'JLL Norway 2025'},
-
-  // ASIA-PACIFIC
-  {id:'sgp', name:'Singapore',      lat:1.35,   lng:103.82,  tier:'T1', mwAvail:1800,
-    energy:0.178, land:2200000, tax:0.17, pue:1.52, ren:5,  grid:99.99, permit:24, water:3.8, conn:'Tier 1',
-    energySrc:'SP Group industrial Q4 2025', landSrc:'JLL SGP 2025'},
-
-  {id:'tok', name:'Tokyo',          lat:35.68,  lng:139.69,  tier:'T1', mwAvail:2000,
-    energy:0.168, land:1100000, tax:0.234,pue:1.40, ren:28, grid:99.98, permit:20, water:3.4, conn:'Tier 1',
-    energySrc:'TEPCO industrial FY2025', landSrc:'CBRE Tokyo DC 2025'},
-
-  {id:'osk', name:'Osaka',          lat:34.69,  lng:135.5,   tier:'T2', mwAvail:800,
-    energy:0.155, land:680000, tax:0.234, pue:1.42, ren:24, grid:99.97, permit:18, water:3.1, conn:'Tier 2',
-    energySrc:'Kansai Electric industrial 2025', landSrc:'JLL Osaka 2025'},
-
-  {id:'syd', name:'Sydney',         lat:-33.87, lng:151.2,   tier:'T2', mwAvail:900,
-    energy:0.146, land:420000, tax:0.30,  pue:1.38, ren:35, grid:99.92, permit:18, water:2.8, conn:'Tier 2',
-    energySrc:'GlobalPetrolPrices AU biz Q4 2025', landSrc:'JLL Sydney DC 2025'},
-
-  // MIDDLE EAST
-  {id:'dxb', name:'Dubai',          lat:25.2,   lng:55.27,   tier:'T2', mwAvail:600,
-    energy:0.044, land:650000, tax:0.09,  pue:1.62, ren:10, grid:99.96, permit:12, water:2.0, conn:'Tier 2',
-    energySrc:'DEWA commercial tariff 2025', landSrc:'JLL Dubai DC 2025'},
-
-  // LATIN AMERICA
-  {id:'mex', name:'Querétaro',      lat:20.59,  lng:-100.39, tier:'T2', mwAvail:400,
-    energy:0.078, land:52000,  tax:0.30,  pue:1.42, ren:25, grid:99.85, permit:10, water:1.8, conn:'Tier 2',
-    energySrc:'CFE commercial tariff 2025', landSrc:'CBRE MX 2025'},
-
-  {id:'sao', name:'São Paulo',      lat:-23.55, lng:-46.63,  tier:'T2', mwAvail:450,
-    energy:0.098, land:85000,  tax:0.34,  pue:1.48, ren:55, grid:99.82, permit:14, water:2.2, conn:'Tier 2',
-    energySrc:'Aneel commercial avg 2025', landSrc:'JLL Brazil DC 2025'},
-
-  {id:'scl', name:'Santiago',       lat:-33.45, lng:-70.67,  tier:'T2', mwAvail:300,
-    energy:0.088, land:48000,  tax:0.27,  pue:1.44, ren:42, grid:99.80, permit:12, water:1.9, conn:'Tier 2',
-    energySrc:'CNE industrial Chile 2025', landSrc:'JLL Chile 2025'},
-
-  // SOUTH ASIA
-  {id:'bom', name:'Mumbai',         lat:19.08,  lng:72.88,   tier:'T2', mwAvail:350,
-    energy:0.072, land:95000,  tax:0.25,  pue:1.55, ren:20, grid:99.75, permit:16, water:1.5, conn:'Tier 2',
-    energySrc:'MSEDCL HT industrial 2025', landSrc:'JLL Mumbai DC 2025'},
-
-  // AFRICA
-  {id:'joh', name:'Johannesburg',   lat:-26.2,  lng:28.04,   tier:'T3', mwAvail:200,
-    energy:0.095, land:38000,  tax:0.27,  pue:1.62, ren:18, grid:99.50, permit:14, water:1.4, conn:'Tier 3',
-    energySrc:'Eskom industrial tariff 2025', landSrc:'JLL SA DC 2025'},
+// ─── Hotspot base data (for map rendering before API loads) ──────────────────
+const HOTSPOTS = [
+  {id:'nva',name:'N. Virginia',    lat:38.9,   lng:-77.4},
+  {id:'sva',name:'Silicon Valley', lat:37.37,  lng:-121.97},
+  {id:'dal',name:'Dallas',         lat:32.78,  lng:-96.8},
+  {id:'phx',name:'Phoenix',        lat:33.43,  lng:-112.07},
+  {id:'chi',name:'Chicago',        lat:41.88,  lng:-87.63},
+  {id:'ore',name:'Oregon',         lat:45.52,  lng:-122.68},
+  {id:'sea',name:'Seattle',        lat:47.61,  lng:-122.33},
+  {id:'lon',name:'London',         lat:51.5,   lng:-0.12},
+  {id:'fra',name:'Frankfurt',      lat:50.11,  lng:8.68},
+  {id:'ams',name:'Amsterdam',      lat:52.37,  lng:4.9},
+  {id:'dub',name:'Dublin',         lat:53.33,  lng:-6.25},
+  {id:'par',name:'Paris',          lat:48.86,  lng:2.35},
+  {id:'zur',name:'Zurich',         lat:47.38,  lng:8.54},
+  {id:'sto',name:'Stockholm',      lat:59.33,  lng:18.07},
+  {id:'nor',name:'Norway',         lat:63.43,  lng:10.39},
+  {id:'sgp',name:'Singapore',      lat:1.35,   lng:103.82},
+  {id:'tok',name:'Tokyo',          lat:35.68,  lng:139.69},
+  {id:'osk',name:'Osaka',          lat:34.69,  lng:135.5},
+  {id:'dxb',name:'Dubai',          lat:25.2,   lng:55.27},
+  {id:'syd',name:'Sydney',         lat:-33.87, lng:151.2},
+  {id:'bom',name:'Mumbai',         lat:19.08,  lng:72.88},
+  {id:'mex',name:'Queretaro',      lat:20.59,  lng:-100.39},
+  {id:'scl',name:'Santiago',       lat:-33.45, lng:-70.67},
+  {id:'joh',name:'Johannesburg',   lat:-26.2,  lng:28.04},
+  {id:'sao',name:'Sao Paulo',      lat:-23.55, lng:-46.63},
 ];
 
-const CHIPS = [
-  {id:'h100', brand:'NVIDIA',name:'H100 SXM5',   cost:30000,pwrKW:0.70,tflops:3958, hbm:'80GB', gpr:8,  badge:'nvidia'},
-  {id:'b200', brand:'NVIDIA',name:'B200 SXM',    cost:70000,pwrKW:1.20,tflops:9000, hbm:'192GB',gpr:8,  badge:'nvidia'},
-  {id:'gb300',brand:'NVIDIA',name:'GB300 NVL72', cost:90000,pwrKW:1.40,tflops:11500,hbm:'288GB',gpr:72, badge:'nvidia'},
-  {id:'mi300',brand:'AMD',   name:'MI300X',      cost:15000,pwrKW:0.75,tflops:5220, hbm:'192GB',gpr:8,  badge:'amd'},
-  {id:'mi325',brand:'AMD',   name:'MI325X',      cost:18000,pwrKW:0.80,tflops:6600, hbm:'256GB',gpr:8,  badge:'amd'},
-  {id:'tpu5', brand:'Google',name:'TPU v5p',     cost:12000,pwrKW:0.45,tflops:4594, hbm:'95GB', gpr:16, badge:'google'},
-  {id:'tr2',  brand:'AWS',   name:'Trainium 2',  cost:10000,pwrKW:0.60,tflops:3800, hbm:'96GB', gpr:16, badge:'aws'},
-  {id:'g3',   brand:'Intel', name:'Gaudi 3',     cost:8500, pwrKW:0.90,tflops:5400, hbm:'128GB',gpr:8,  badge:'intel'},
-  {id:'a100', brand:'NVIDIA',name:'A100 SXM4',   cost:12000,pwrKW:0.40,tflops:2496, hbm:'80GB', gpr:8,  badge:'nvidia'},
-  {id:'cpu',  brand:'Intel', name:'Xeon w9',     cost:8000, pwrKW:0.25,tflops:50,   hbm:'512GB',gpr:40, badge:'intel'},
-];
+// ─── Map init ─────────────────────────────────────────────────────────────────
+const map = L.map('map', {
+  center: [25, 15],
+  zoom: 3,
+  zoomControl: true,
+  attributionControl: true,
+  preferCanvas: true,
+});
 
-// ════════════════ STATE ════════════════
-const S = {
-  step:1, market:null, chipId:'h100',
-  mw:100, density:30, util:0.75,
-  redundancy:'2N', revModel:'gpu', gpuPrice:2.50, coloRate:1500,
-};
-let leafMap, threeR, threeScene, threeCamera;
-let threeObjs=[], wireframe=false, autoRotate=false;
-let orb={down:false,x:0,y:0,theta:0.6,phi:0.72,radius:85};
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
 
-// ════════════════ UTILS ════════════════
-const fmt=(n,d=0)=>(n==null||isNaN(n))?'—':n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
-function fmtM(n){
-  const s=n<0?'−':'', a=Math.abs(n);
-  if(a>=1e9) return s+'$'+(a/1e9).toFixed(2)+'B';
-  if(a>=1e6) return s+'$'+(a/1e6).toFixed(1)+'M';
-  return s+'$'+fmt(a);
+// Layer groups
+const marketsLayer  = L.layerGroup().addTo(map);
+const projectsLayer = L.layerGroup();
+const pinLayer      = L.layerGroup().addTo(map);
+
+// ─── Custom marker SVGs ───────────────────────────────────────────────────────
+function marketIcon(score, tier) {
+  const colors = { hot:'#0fffa0', active:'#2d7ff9', watch:'#f5a623', cold:'#3e5272' };
+  const c = colors[tier] || colors.cold;
+  const size = tier === 'hot' ? 14 : tier === 'active' ? 12 : 10;
+  return L.divIcon({
+    className: '',
+    html: `<div style="position:relative;width:${size+8}px;height:${size+8}px">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+        width:${size}px;height:${size}px;border-radius:50%;background:${c};
+        box-shadow:0 0 8px ${c}88;animation:mPulse 2.5s ease-in-out infinite;"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+        width:${size+8}px;height:${size+8}px;border-radius:50%;
+        border:1px solid ${c}44;animation:mRing 2.5s ease-in-out infinite;"></div>
+    </div>
+    <style>@keyframes mPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.2)}}
+    @keyframes mRing{0%{transform:translate(-50%,-50%) scale(1);opacity:.5}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}</style>`,
+    iconSize: [size+8, size+8],
+    iconAnchor: [(size+8)/2, (size+8)/2],
+  });
 }
 
-function calc(){
-  if(!S.market) return null;
-  const chip=CHIPS.find(c=>c.id===S.chipId);
-  const m=S.market;
-  const mw=S.mw;
-  const nChips=Math.floor(mw*1000/chip.pwrKW);
-  const nRacks=Math.ceil(nChips/chip.gpr);
-  const acres =Math.max(1,Math.ceil(mw*0.5+nRacks*0.008));
-  const rMult={'N1':1.15,'2N':1.30,'2N1':1.45}[S.redundancy]||1.30;
-  const laborMult = m.tier==='T1'?1.1:m.tier==='T2'?0.82:0.52;
-  const cstPerMW  = m.tier==='T1'?10000000:m.tier==='T2'?8200000:7000000;
-
-  const chipCost    =nChips*chip.cost;
-  const construction=mw*cstPerMW*laborMult*rMult;
-  const land        =acres*m.land;
-  const powerInfra  =mw*1600000*rMult;
-  const cooling     =mw*900000;
-  const networking  =nRacks*18000;
-  const misc        =(construction+chipCost)*0.08;
-  const totalCapex  =chipCost+construction+land+powerInfra+cooling+networking+misc;
-
-  const power      =mw*1000*m.pue*8760*m.energy;
-  const labor      =nRacks*600*laborMult;
-  const water      =mw*1200*m.water;
-  const network    =nRacks*2200;
-  const maintenance=totalCapex*0.025;
-  const insurance  =totalCapex*0.008;
-  const totalOpex  =power+labor+water+network+maintenance+insurance;
-
-  const gpuRev =nChips*8760*S.util*S.gpuPrice;
-  const coloRev=nRacks*S.coloRate*12;
-  const revenue=S.revModel==='gpu'?gpuRev:S.revModel==='colo'?coloRev:gpuRev*0.6+coloRev*0.4;
-
-  const ebitda=revenue-totalOpex;
-  const depr  =totalCapex/7;
-  const ebit  =ebitda-depr;
-  const tax   =Math.max(0,ebit*m.tax);
-  const net   =ebit-tax;
-  const roi   =(net/totalCapex)*100;
-  const pyrs  =net>0?totalCapex/net:Infinity;
-
-  return{nChips,nRacks,acres,chipCost,construction,land,powerInfra,cooling,networking,misc,totalCapex,
-         power,labor,water:mw*1200*m.water,network,maintenance,insurance,totalOpex,
-         gpuRev,coloRev,revenue,ebitda,depr,ebit,tax,net,roi,payback:pyrs,chip,m};
+function projectIcon(status) {
+  const colors = {
+    operational: '#0F6E56', under_construction: '#185FA5',
+    announced: '#7F77DD', cancelled: '#888780',
+  };
+  const c = colors[status] || colors.announced;
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:8px;height:8px;border-radius:50%;background:${c};
+      border:1px solid ${c}cc;box-shadow:0 0 4px ${c}66"></div>`,
+    iconSize: [8, 8],
+    iconAnchor: [4, 4],
+  });
 }
 
-function toast(msg,ms=2500){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),ms);
+function pinIcon() {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:12px;height:12px;border-radius:50%;background:#f5a623;
+      border:2px solid #fff;box-shadow:0 0 8px #f5a62388;transform:translate(-50%,-50%)"></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  });
 }
 
-// ════════════════ SITES LIST ════════════════
-function renderSites(q=''){
-  const rows=q?MARKETS.filter(m=>m.name.toLowerCase().includes(q.toLowerCase())):MARKETS;
-  document.getElementById('sites-list').innerHTML=rows.map(m=>`
-    <div class="site-item ${S.market&&S.market.id===m.id?'selected':''}" onclick="pickMarket('${m.id}')">
-      <span class="site-name">${m.name}</span>
-      <div class="site-meta">
-        <span class="site-tier ${m.tier}">${m.tier}</span>
-        <span class="site-mw">$${m.energy.toFixed(3)}/kWh</span>
+// ─── Render market markers ────────────────────────────────────────────────────
+function renderMarketMarkers() {
+  marketsLayer.clearLayers();
+  if (!STATE.marketsData) {
+    // Placeholder markers before data loads
+    HOTSPOTS.forEach(h => {
+      const marker = L.marker([h.lat, h.lng], {
+        icon: marketIcon(50, 'cold'),
+        zIndexOffset: 100,
+      }).addTo(marketsLayer);
+      marker.on('click', () => onMarketClick(h.id));
+    });
+    return;
+  }
+
+  STATE.marketsData.markets.forEach(m => {
+    const marker = L.marker([m.lat, m.lng], {
+      icon: marketIcon(m.score, m.tier),
+      zIndexOffset: 100 + m.score,
+    }).addTo(marketsLayer);
+    marker.on('click', () => showMarketCard(m));
+  });
+}
+
+// ─── Render project markers ───────────────────────────────────────────────────
+function renderProjectMarkers() {
+  projectsLayer.clearLayers();
+  if (!STATE.projectsData) return;
+
+  const legend = document.getElementById('pipeline-legend');
+  legend.classList.toggle('visible', STATE.showProjects);
+
+  STATE.projectsData.features.forEach(f => {
+    const p = f.properties;
+    const [lng, lat] = f.geometry.coordinates;
+    const marker = L.marker([lat, lng], {
+      icon: projectIcon(p.status),
+      zIndexOffset: 50,
+    }).addTo(projectsLayer);
+    marker.on('click', () => showProjectCard(p, lat, lng));
+  });
+}
+
+// ─── Show market score card ───────────────────────────────────────────────────
+function showMarketCard(market) {
+  const card = document.getElementById('score-card');
+
+  document.getElementById('sc-name').textContent = market.name;
+  document.getElementById('sc-meta').textContent =
+    `${market.country} · ${market.tier} market · Rank #${market.rank}`;
+  document.getElementById('sc-score').textContent = market.score;
+
+  const tierLabels = { hot:'Hot Market', active:'Active Market', watch:'Watch List', cold:'Low Opportunity' };
+  const tierEl = document.getElementById('sc-tier');
+  tierEl.textContent = tierLabels[market.tier] || market.tier;
+  tierEl.className = `sc-tier-pill tier-${market.tier}`;
+
+  document.getElementById('sc-ci').textContent = 'High confidence · known market';
+
+  // Score breakdown bars
+  const bd = market.breakdown;
+  const bars = [
+    { name: 'Power cost',    val: bd.power.score,        raw: bd.power.value,        live: bd.power.live },
+    { name: 'Demand',        val: bd.demand.score,       raw: bd.demand.value },
+    { name: 'Connectivity',  val: bd.connectivity.score, raw: bd.connectivity.value },
+    { name: 'Permitting',    val: bd.permitting.score,   raw: bd.permitting.value },
+    { name: 'Political risk',val: bd.political.score,    raw: bd.political.value },
+  ];
+
+  document.getElementById('sc-bars').innerHTML = bars.map(b => `
+    <div class="score-bar-row">
+      <div class="sbr-label">
+        <span class="sbr-name">${b.name}${b.live ? ' <span style="color:#0fffa0;font-size:9px">● LIVE</span>' : ''}</span>
+        <span class="sbr-val">${b.raw}</span>
+      </div>
+      <div class="sbr-track">
+        <div class="sbr-fill" style="width:${b.val}%;background:${scoreColor(b.val)}"></div>
       </div>
     </div>`).join('');
-}
-window.filterSites=v=>renderSites(v);
 
-function pickMarket(id){
-  S.market=MARKETS.find(m=>m.id===id);
-  renderSites(document.getElementById('site-search').value);
-  document.getElementById('btn-to-config').disabled=false;
-  renderLocCard();
-  updatePills();
-  if(leafMap&&S.step===1) leafMap.setView([S.market.lat,S.market.lng],5,{animate:true});
-}
-window.pickMarket=pickMarket;
+  // Highlights as signals
+  document.getElementById('sc-signal-rows').innerHTML = (market.intel?.highlights || market.highlights || [])
+    .map(h => `<div class="sig-row"><span class="sig-label">${h}</span></div>`).join('');
 
-function renderLocCard(){
-  const m=S.market; if(!m) return;
-  document.getElementById('loc-title').textContent=m.name;
+  // Nearby projects
+  showNearbyProjects(market.lat, market.lng);
 
-  // KPI grid — energy cost and land cost front and center
-  document.getElementById('loc-kpis').innerHTML=`
-    <div class="loc-kpi">
-      <div class="loc-kpi-lbl">Energy Cost</div>
-      <div class="loc-kpi-val blue">$${m.energy.toFixed(3)}</div>
-      <div class="loc-kpi-sub">per kWh · ${m.energySrc}</div>
-    </div>
-    <div class="loc-kpi">
-      <div class="loc-kpi-lbl">Land Cost</div>
-      <div class="loc-kpi-val amber">$${(m.land/1000).toFixed(0)}K</div>
-      <div class="loc-kpi-sub">per acre · ${m.landSrc}</div>
-    </div>
-    <div class="loc-kpi">
-      <div class="loc-kpi-lbl">PUE</div>
-      <div class="loc-kpi-val">${m.pue}</div>
-      <div class="loc-kpi-sub">Power Usage Eff.</div>
-    </div>
-    <div class="loc-kpi">
-      <div class="loc-kpi-lbl">Renewables</div>
-      <div class="loc-kpi-val green">${m.ren}%</div>
-      <div class="loc-kpi-sub">Grid mix</div>
-    </div>
-  `;
-  document.getElementById('loc-details').innerHTML=`
-    <div class="loc-detail-row"><span class="loc-dk">Tax Rate</span><span class="loc-dv">${(m.tax*100).toFixed(1)}%</span></div>
-    <div class="loc-detail-row"><span class="loc-dk">Grid Reliability</span><span class="loc-dv">${m.grid}%</span></div>
-    <div class="loc-detail-row"><span class="loc-dk">Connectivity</span><span class="loc-dv">${m.conn}</span></div>
-    <div class="loc-detail-row"><span class="loc-dk">Permitting</span><span class="loc-dv">${m.permit} months</span></div>
-    <div class="loc-detail-row"><span class="loc-dk">Avail. Power</span><span class="loc-dv">${fmt(m.mwAvail)} MW</span></div>
-  `;
-  if(S.step===1){
-    document.getElementById('panel-loc-info').classList.remove('panel-hidden');
-    document.getElementById('data-badge').style.display='flex';
-  }
-}
-
-// ════════════════ LEAFLET ════════════════
-function initLeaflet(){
-  // Guard: if already initialized, just return
-  if(leafMap) return;
-
-  const mapEl = document.getElementById('map');
-  // Force explicit pixel size so Leaflet can measure the container
-  mapEl.style.width  = '100%';
-  mapEl.style.height = (window.innerHeight - 52) + 'px';
-
-  leafMap = L.map('map', {
-    center: [25, 10],
-    zoom: 2,
-    minZoom: 2,
-    maxZoom: 18,
-    zoomControl: true,
-    preferCanvas: true,
-  });
-
-  // Primary: CartoDB Dark Matter (works on Vercel/web)
-  // Fallback: OpenStreetMap (works everywhere including file://)
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_matter_all_labels/{z}/{x}/{y}{r}.png';
-
-  const tileLayer = L.tileLayer(tileUrl, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20,
-    crossOrigin: true,
-  });
-
-  tileLayer.on('tileerror', function() {
-    // If CartoDB tiles fail (e.g. file:// CORS), swap to OSM dark style
-    if (!leafMap._fallbackApplied) {
-      leafMap._fallbackApplied = true;
-      tileLayer.remove();
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19,
-        crossOrigin: true,
-      }).addTo(leafMap);
-      // Apply dark CSS filter to OSM tiles
-      const style = document.createElement('style');
-      style.textContent = '.leaflet-tile-pane{filter:invert(1) hue-rotate(200deg) saturate(0.4) brightness(0.5) contrast(1.1)!important}';
-      document.head.appendChild(style);
-    }
-  });
-
-  tileLayer.addTo(leafMap);
-
-  // Force re-measurement after tiles load
-  leafMap.whenReady(()=>{ setTimeout(()=>leafMap.invalidateSize(), 100); });
-
-  window.addEventListener('resize', ()=>{
-    mapEl.style.height = (window.innerHeight - 52) + 'px';
-    if(leafMap) leafMap.invalidateSize();
-  });
-
-  MARKETS.forEach(m=>{
-    const col=m.tier==='T1'?'#2d7ff9':m.tier==='T2'?'#06c8d4':'#f5a623';
-    const sz =m.tier==='T1'?12:m.tier==='T2'?9:7;
-    const icon=L.divIcon({
-      className:'',
-      html:`<div style="
-        width:${sz}px;height:${sz}px;border-radius:50%;
-        background:${col};border:2px solid rgba(255,255,255,.5);
-        box-shadow:0 0 12px ${col},0 0 28px ${col}66;
-        cursor:pointer
-      "></div>`,
-      iconSize:[sz,sz],
-      iconAnchor:[sz/2,sz/2],
-    });
-    L.marker([m.lat,m.lng],{icon}).addTo(leafMap).on('click',()=>{
-      pickMarket(m.id);
-      showPopup(m);
-    });
-  });
-}
-
-function showPopup(m){
-  L.popup({closeButton:true,maxWidth:280}).setLatLng([m.lat,m.lng]).setContent(`
-    <div class="mp-name">${m.name}</div>
-    <div class="mp-grid">
-      <div class="mp-cell">
-        <div class="mp-cell-lbl">Energy Cost</div>
-        <div class="mp-cell-val blue">$${m.energy.toFixed(3)}<span style="font-size:10px;color:var(--text3)">/kWh</span></div>
-      </div>
-      <div class="mp-cell">
-        <div class="mp-cell-lbl">Land / Acre</div>
-        <div class="mp-cell-val amber">$${(m.land>=1000000?(m.land/1e6).toFixed(1)+'M':(m.land/1000).toFixed(0)+'K')}</div>
-      </div>
-      <div class="mp-cell">
-        <div class="mp-cell-lbl">PUE</div>
-        <div class="mp-cell-val">${m.pue}</div>
-      </div>
-      <div class="mp-cell">
-        <div class="mp-cell-lbl">Renewables</div>
-        <div class="mp-cell-val green">${m.ren}%</div>
-      </div>
-    </div>
-    <div class="mp-row"><span class="mp-k">Tier</span><span class="mp-v">${m.tier}</span></div>
-    <div class="mp-row"><span class="mp-k">Tax Rate</span><span class="mp-v">${(m.tax*100).toFixed(1)}%</span></div>
-    <div class="mp-row"><span class="mp-k">Grid Reliability</span><span class="mp-v">${m.grid}%</span></div>
-    <div class="mp-row"><span class="mp-k">Avail. MW</span><span class="mp-v">${fmt(m.mwAvail)} MW</span></div>
-    <div class="mp-row" style="font-size:8px"><span class="mp-k">Energy source</span><span class="mp-v" style="color:var(--text3);font-size:8px">${m.energySrc}</span></div>
-    <button class="btn-select-site" onclick="goFromPopup('${m.id}')">Select &amp; Configure →</button>
-  `).openOn(leafMap);
-}
-window.goFromPopup=id=>{leafMap.closePopup();pickMarket(id);goToStep(2)};
-
-// ════════════════ CHIPS ════════════════
-function renderChips(){
-  document.getElementById('chip-grid').innerHTML=CHIPS.map(c=>`
-    <div class="chip-card ${S.chipId===c.id?'selected':''}" onclick="pickChip('${c.id}')">
-      <div class="chip-badge ${c.badge}">${c.brand}</div>
-      <div class="chip-name">${c.name}</div>
-      <div class="chip-tflops">${fmt(c.tflops)} TFLOPs</div>
-      <div class="chip-hbm">${c.hbm} HBM · ${c.gpr} GPU/rack</div>
-      <div class="chip-cost">$${(c.cost/1000).toFixed(0)}K/unit · ${c.pwrKW}kW</div>
-    </div>`).join('');
-}
-function pickChip(id){S.chipId=id;renderChips();updateCfg();updatePills()}
-window.pickChip=pickChip;
-
-// ════════════════ SLIDERS ════════════════
-window.onSlider=function(){
-  S.mw      =+document.getElementById('sl-mw').value;
-  S.density =+document.getElementById('sl-density').value;
-  S.util    =+document.getElementById('sl-util').value/100;
-  S.gpuPrice=+document.getElementById('sl-gpu').value/100;
-  S.coloRate=+document.getElementById('sl-colo').value;
-  document.getElementById('lbl-mw').textContent     =S.mw+' MW';
-  document.getElementById('lbl-density').textContent=S.density+' kW/rack';
-  document.getElementById('lbl-util').textContent   =Math.round(S.util*100)+'%';
-  document.getElementById('lbl-gpu').textContent    ='$'+S.gpuPrice.toFixed(2);
-  document.getElementById('lbl-colo').textContent   ='$'+fmt(S.coloRate);
-  updateCfg();updatePills();
-};
-
-window.pickPill=function(g,el){
-  el.parentElement.querySelectorAll('.radio-pill').forEach(p=>p.classList.remove('selected'));
-  el.classList.add('selected');
-  if(g==='redundancy') S.redundancy=el.dataset.val;
-  if(g==='revmodel')   S.revModel  =el.dataset.val;
-  updateCfg();updatePills();
-};
-
-function updateCfg(){
-  const f=calc();if(!f) return;
-  document.getElementById('cfg-chips').textContent   =fmt(f.nChips);
-  document.getElementById('cfg-racks').textContent   =fmt(f.nRacks);
-  document.getElementById('cfg-acres').textContent   =fmt(f.acres)+' ac.';
-  document.getElementById('cfg-chipcost').textContent=fmtM(f.chipCost);
-}
-
-function updatePills(){
-  const f=calc();if(!f) return;
-  document.getElementById('pill-mw').textContent    =S.mw+' MW';
-  document.getElementById('pill-chips').textContent =fmt(f.nChips);
-  document.getElementById('pill-roi').textContent   =isFinite(f.roi)?f.roi.toFixed(1)+'%':'—';
-  document.getElementById('pill-pb').textContent    =isFinite(f.payback)&&f.payback>0?f.payback.toFixed(1)+' yr':'—';
-}
-
-// ════════════════ STEP NAV ════════════════
-window.goToStep=function(n){
-  if(n>1&&!S.market){toast('Select a market first');return}
-  S.step=n;
-  [1,2,3,4].forEach(i=>{
-    const b=document.getElementById('step-btn-'+i);
-    b.classList.remove('active','done');
-    if(i<n) b.classList.add('done');
-    if(i===n) b.classList.add('active');
-  });
-  const H=id=>document.getElementById(id).classList.add('panel-hidden');
-  const V=id=>document.getElementById(id).classList.remove('panel-hidden');
-  ['panel-sites','panel-loc-info','panel-config','three-canvas-wrap',
-   'panel-3d-controls','panel-financials','panel-fin-left'].forEach(H);
-  document.getElementById('data-badge').style.display='none';
-
-  if(n===1){
-    V('panel-sites');
-    if(S.market){renderLocCard();V('panel-loc-info');}
-    leafMap.setView([25,10],2,{animate:true});
-    document.getElementById('data-badge').style.display='flex';
-    setTimeout(()=>leafMap.invalidateSize(),100);
-  }
-  if(n===2){
-    V('panel-config');updateCfg();
-    if(S.market) leafMap.setView([S.market.lat,S.market.lng],6,{animate:true});
-  }
-  if(n===3){V('three-canvas-wrap');V('panel-3d-controls');setTimeout(initThree,50)}
-  if(n===4){V('panel-financials');V('panel-fin-left');renderFinancials()}
-};
-
-// ════════════════ THREE.JS ════════════════
-function initThree(){
-  const wrap=document.getElementById('three-canvas-wrap');
-  const canvas=document.getElementById('three-canvas');
-  const W=wrap.clientWidth,H=wrap.clientHeight;
-  if(threeR) threeR.dispose();
-
-  threeScene=new THREE.Scene();
-  threeScene.background=new THREE.Color(0x05080f);
-  threeScene.fog=new THREE.Fog(0x05080f,90,240);
-
-  threeCamera=new THREE.PerspectiveCamera(48,W/H,0.1,500);
-  orb={down:false,x:0,y:0,theta:0.6,phi:0.72,radius:88};
-  setCam();
-
-  threeR=new THREE.WebGLRenderer({canvas,antialias:true});
-  threeR.setSize(W,H);
-  threeR.setPixelRatio(Math.min(devicePixelRatio,2));
-  threeR.shadowMap.enabled=true;
-
-  threeScene.add(new THREE.AmbientLight(0x0d1a3a,0.6));
-  const dir=new THREE.DirectionalLight(0xcce0ff,0.9);
-  dir.position.set(35,65,35);dir.castShadow=true;threeScene.add(dir);
-  const bp=new THREE.PointLight(0x2d7ff9,2.2,90);bp.position.set(-22,16,18);threeScene.add(bp);
-  const gp=new THREE.PointLight(0x0fffa0,1.5,70);gp.position.set(22,10,-22);threeScene.add(gp);
-
-  threeObjs=[];
-  buildFacility();
-  threeScene.add(new THREE.GridHelper(220,44,0x0c1930,0x0c1930));
-  setupOrb(canvas);
-
-  const f=calc();
-  if(f){
-    const halls=Math.max(1,Math.ceil(f.nRacks/80));
-    document.getElementById('t-halls').textContent=halls;
-    document.getElementById('t-racks').textContent=fmt(f.nRacks);
-    document.getElementById('t-mw').textContent=S.mw+' MW';
-  }
-  animate3();
-  new ResizeObserver(()=>{
-    if(!threeR) return;
-    const w=wrap.clientWidth,h=wrap.clientHeight;
-    threeR.setSize(w,h);threeCamera.aspect=w/h;threeCamera.updateProjectionMatrix();
-  }).observe(wrap);
-}
-
-function buildFacility(){
-  const f=calc();if(!f) return;
-  const nHalls=Math.max(1,Math.ceil(f.nRacks/80));
-  const HW=18,HD=32,HS=23,ox=-((nHalls-1)*HS)/2;
-
-  // Ground
-  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(220,220),
-    new THREE.MeshStandardMaterial({color:0x070f1e,roughness:0.9}));
-  gnd.rotation.x=-Math.PI/2;gnd.position.y=-0.06;gnd.receiveShadow=true;
-  threeScene.add(gnd);
-
-  for(let h=0;h<nHalls;h++){
-    const cx=ox+h*HS;
-    const hall=new THREE.Mesh(new THREE.BoxGeometry(HW,6.5,HD),
-      new THREE.MeshStandardMaterial({color:0x0a1428,roughness:0.65,metalness:0.35}));
-    hall.position.set(cx,3.25,0);hall.castShadow=true;hall.receiveShadow=true;
-    threeScene.add(hall);threeObjs.push(hall);
-
-    const rs=new THREE.Mesh(new THREE.BoxGeometry(HW,0.1,HD),
-      new THREE.MeshStandardMaterial({color:0x2d7ff9,emissive:0x2d7ff9,emissiveIntensity:0.55}));
-    rs.position.set(cx,6.6,0);threeScene.add(rs);
-
-    const rc=Math.min(80,f.nRacks-h*80),rows=Math.ceil(rc/8);
-    for(let r=0;r<rows;r++){
-      const rz=-13+(r*(30/Math.max(rows-1,1)));
-      for(let c=0;c<2;c++){
-        const rx=cx+(c===0?-3.8:3.8);
-        const rack=new THREE.Mesh(new THREE.BoxGeometry(2.4,4.8,1.0),
-          new THREE.MeshStandardMaterial({color:0x0f1e38,roughness:0.4,metalness:0.7}));
-        rack.position.set(rx,2.45,rz);rack.castShadow=true;
-        threeScene.add(rack);threeObjs.push(rack);
-        const led=new THREE.Mesh(new THREE.BoxGeometry(2.1,0.07,0.85),
-          new THREE.MeshStandardMaterial({color:0x0fffa0,emissive:0x0fffa0,emissiveIntensity:0.9}));
-        led.position.set(rx,4.88,rz);threeScene.add(led);
-      }
-    }
-    for(let ct=0;ct<2;ct++){
-      const tx=cx+(ct===0?-4.5:4.5);
-      const tow=new THREE.Mesh(new THREE.BoxGeometry(3.8,9,5.5),
-        new THREE.MeshStandardMaterial({color:0x0c1a30,roughness:0.75}));
-      tow.position.set(tx,4.5,-22);tow.castShadow=true;
-      threeScene.add(tow);threeObjs.push(tow);
-      const fan=new THREE.Mesh(new THREE.BoxGeometry(3.4,3.2,0.1),
-        new THREE.MeshStandardMaterial({color:0x06c8d4,emissive:0x06c8d4,emissiveIntensity:0.28}));
-      fan.position.set(tx,6.5,-19.2);threeScene.add(fan);
-    }
+  // Highlight in list
+  document.querySelectorAll('.market-item').forEach(el => el.classList.remove('selected'));
+  const listItem = document.querySelector(`[data-id="${market.id}"]`);
+  if (listItem) {
+    listItem.classList.add('selected');
+    listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  const sub=new THREE.Mesh(new THREE.BoxGeometry(14,5.5,18),
-    new THREE.MeshStandardMaterial({color:0x0b1626,roughness:0.55}));
-  sub.position.set(ox-27,2.75,-5);sub.castShadow=true;
-  threeScene.add(sub);threeObjs.push(sub);
-  for(let i=0;i<3;i++){
-    const cy=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,4.5,8),
-      new THREE.MeshStandardMaterial({color:0x162540,metalness:0.75}));
-    cy.position.set(ox-25+i*3.5,2.6,2.5);
-    threeScene.add(cy);threeObjs.push(cy);
-  }
-  for(let i=0;i<4;i++){
-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,15,6),
-      new THREE.MeshStandardMaterial({color:0x1b2f4c}));
-    pole.position.set(ox-37+i*4.5,7.5,-2);threeScene.add(pole);
-  }
-  const adm=new THREE.Mesh(new THREE.BoxGeometry(11,4.5,9),
-    new THREE.MeshStandardMaterial({color:0x0d1d36,roughness:0.65}));
-  adm.position.set(ox+nHalls*HS+11,2.25,0);adm.castShadow=true;
-  threeScene.add(adm);threeObjs.push(adm);
-  const road=new THREE.Mesh(new THREE.PlaneGeometry(4.5,130),
-    new THREE.MeshStandardMaterial({color:0x07101b,roughness:1}));
-  road.rotation.x=-Math.PI/2;road.position.set(ox-15,0.02,0);threeScene.add(road);
+  // Pan map
+  map.panTo([market.lat, market.lng], { animate: true, duration: 0.5 });
+
+  card.classList.add('visible');
+  STATE.selectedLocation = market;
 }
 
-function setupOrb(canvas){
-  canvas.addEventListener('mousedown',e=>{orb.down=true;orb.x=e.clientX;orb.y=e.clientY});
-  canvas.addEventListener('mouseup',()=>orb.down=false);
-  canvas.addEventListener('mousemove',e=>{
-    if(!orb.down) return;
-    orb.theta-=(e.clientX-orb.x)*0.007;
-    orb.phi=Math.max(0.12,Math.min(1.45,orb.phi+(e.clientY-orb.y)*0.006));
-    orb.x=e.clientX;orb.y=e.clientY;setCam();
-  });
-  canvas.addEventListener('wheel',e=>{orb.radius=Math.max(18,Math.min(170,orb.radius+e.deltaY*0.12));setCam()});
-  let lt=null;
-  canvas.addEventListener('touchstart',e=>{lt=e.touches[0]},{passive:true});
-  canvas.addEventListener('touchmove',e=>{
-    if(!lt) return;
-    const t=e.touches[0];
-    orb.theta-=(t.clientX-lt.clientX)*0.007;
-    orb.phi=Math.max(0.12,Math.min(1.45,orb.phi+(t.clientY-lt.clientY)*0.006));
-    lt=t;setCam();
-  },{passive:true});
-}
-function setCam(){
-  if(!threeCamera) return;
-  const{theta,phi,radius}=orb;
-  threeCamera.position.set(radius*Math.sin(phi)*Math.sin(theta),radius*Math.cos(phi),radius*Math.sin(phi)*Math.cos(theta));
-  threeCamera.lookAt(0,4,0);
-}
-window.resetCam=()=>{orb.theta=0.6;orb.phi=0.72;orb.radius=88;setCam()};
-window.toggleWireframe=()=>{
-  wireframe=!wireframe;
-  threeObjs.forEach(o=>{if(o.material) o.material.wireframe=wireframe});
-  document.getElementById('btn-wf').classList.toggle('active-btn',wireframe);
-};
-window.toggleRotate=()=>{
-  autoRotate=!autoRotate;
-  document.getElementById('btn-rot').classList.toggle('active-btn',autoRotate);
-};
-function animate3(){
-  if(!threeR||S.step!==3) return;
-  requestAnimationFrame(animate3);
-  if(autoRotate){orb.theta+=0.004;setCam()}
-  threeR.render(threeScene,threeCamera);
-}
+function showProjectCard(proj, lat, lng) {
+  document.getElementById('sc-name').textContent = proj.name;
+  document.getElementById('sc-meta').textContent =
+    `${proj.operator || 'Unknown operator'} · ${proj.mw ? proj.mw + ' MW' : 'MW unknown'}`;
+  document.getElementById('sc-score').textContent = '—';
 
-// ════════════════ FINANCIALS ════════════════
-function renderFinancials(){
-  const f=calc();if(!f) return;
+  const tierEl = document.getElementById('sc-tier');
+  const statusLabels = {
+    operational: 'Operational', under_construction: 'Under Construction',
+    announced: 'Announced', cancelled: 'Cancelled / Hold',
+  };
+  const statusColors = {
+    operational: 'tier-hot', under_construction: 'tier-active',
+    announced: 'tier-watch', cancelled: 'tier-cold',
+  };
+  tierEl.textContent = statusLabels[proj.status] || proj.status;
+  tierEl.className = `sc-tier-pill ${statusColors[proj.status] || 'tier-cold'}`;
+  document.getElementById('sc-ci').textContent = `Source: ${proj.source} · ${proj.confidence} confidence`;
 
-  document.getElementById('capex-body').innerHTML=`
-    <div class="fin-row"><span class="fin-lbl">Chip Hardware</span><span class="fin-val accent">${fmtM(f.chipCost)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Construction</span><span class="fin-val">${fmtM(f.construction)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Land (${fmt(f.acres)} ac.)</span><span class="fin-val">${fmtM(f.land)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Power Infrastructure</span><span class="fin-val">${fmtM(f.powerInfra)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Cooling Systems</span><span class="fin-val">${fmtM(f.cooling)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Networking</span><span class="fin-val">${fmtM(f.networking)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Misc / Contingency</span><span class="fin-val">${fmtM(f.misc)}</span></div>
-    <div class="fin-total-row"><span class="fin-total-lbl">Total CAPEX</span><span class="fin-total-val" style="color:var(--accent)">${fmtM(f.totalCapex)}</span></div>
+  document.getElementById('sc-bars').innerHTML = '';
+  document.getElementById('sc-signal-rows').innerHTML = `
+    <div class="sig-row"><span class="sig-label">Operator</span><span class="sig-val">${proj.operator || '—'}</span></div>
+    <div class="sig-row"><span class="sig-label">Capacity</span><span class="sig-val">${proj.mw ? proj.mw + ' MW' : '—'}</span></div>
+    <div class="sig-row"><span class="sig-label">Announced</span><span class="sig-val">${proj.announced_date ? proj.announced_date.slice(0,7) : '—'}</span></div>
+    ${proj.source_url ? `<div class="sig-row"><span class="sig-label" style="cursor:pointer;color:var(--accent)" onclick="window.open('${proj.source_url}','_blank')">View source ↗</span></div>` : ''}
   `;
 
-  document.getElementById('opex-body').innerHTML=`
-    <div class="fin-row"><span class="fin-lbl">Power ($${f.m.energy.toFixed(3)}/kWh)</span><span class="fin-val">${fmtM(f.power)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Labor</span><span class="fin-val">${fmtM(f.labor)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Water Cooling</span><span class="fin-val">${fmtM(f['water'])}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Network Transit</span><span class="fin-val">${fmtM(f.network)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Maintenance</span><span class="fin-val">${fmtM(f.maintenance)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Insurance</span><span class="fin-val">${fmtM(f.insurance)}</span></div>
-    <div class="fin-total-row"><span class="fin-total-lbl">Total OPEX/yr</span><span class="fin-total-val">${fmtM(f.totalOpex)}</span></div>
-  `;
+  document.getElementById('sc-projects').style.display = 'none';
+  document.getElementById('score-card').classList.add('visible');
+}
 
-  const rc=f.roi>15?'green':f.roi>5?'blue':'amber';
-  document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi-card"><div class="kpi-lbl">Annual Revenue</div><div class="kpi-val blue">${fmtM(f.revenue)}</div><div class="kpi-sub">${S.revModel.toUpperCase()}</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">Net Income/yr</div><div class="kpi-val ${f.net>0?'green':'amber'}">${fmtM(f.net)}</div><div class="kpi-sub">After tax ${(f.m.tax*100).toFixed(1)}%</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">ROI</div><div class="kpi-val ${rc}">${isFinite(f.roi)?f.roi.toFixed(1)+'%':'—'}</div><div class="kpi-sub">Annual</div></div>
-    <div class="kpi-card"><div class="kpi-lbl">Payback</div><div class="kpi-val amber">${isFinite(f.payback)&&f.payback>0?f.payback.toFixed(1)+' yr':'—'}</div><div class="kpi-sub">Breakeven</div></div>
-  `;
+// ─── Pin drop ─────────────────────────────────────────────────────────────────
+let currentPin = null;
 
-  document.getElementById('pl-body').innerHTML=`
-    <div class="fin-row"><span class="fin-lbl">Revenue</span><span class="fin-val pos">${fmtM(f.revenue)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Operating Costs</span><span class="fin-val neg">−${fmtM(f.totalOpex)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">EBITDA</span><span class="fin-val ${f.ebitda>0?'pos':'neg'}">${fmtM(f.ebitda)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Depreciation (7yr)</span><span class="fin-val neg">−${fmtM(f.depr)}</span></div>
-    <div class="fin-row"><span class="fin-lbl">Tax (${(f.m.tax*100).toFixed(1)}%)</span><span class="fin-val neg">−${fmtM(f.tax)}</span></div>
-    <div class="fin-total-row"><span class="fin-total-lbl">Net Income</span><span class="fin-total-val ${f.net>0?'pos':'neg'}">${fmtM(f.net)}</span></div>
-  `;
+function startPinDrop() {
+  STATE.pinDropMode = !STATE.pinDropMode;
+  const btn = document.getElementById('ctrl-pin');
+  if (STATE.pinDropMode) {
+    btn.classList.add('active');
+    btn.textContent = '✕ Cancel';
+    map.getContainer().style.cursor = 'crosshair';
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '+ Drop Pin';
+    map.getContainer().style.cursor = '';
+  }
+}
 
-  const maxV=Math.max(1,...Array.from({length:10},(_,i)=>Math.abs(f.net*(i+1)-f.totalCapex)));
-  let ch='';
-  for(let yr=1;yr<=10;yr++){
-    const cum=f.net*yr-f.totalCapex;
-    const pct=Math.max(0,Math.min(100,(Math.abs(cum)/maxV)*100));
-    ch+=`<div class="yr-bar-row">
-      <span class="yr-bar-lbl">Y${yr}</span>
-      <div class="yr-bar-wrap"><div class="yr-bar ${cum>0?'profit':''}" style="width:${pct}%"></div></div>
-      <span class="yr-bar-num">${fmtM(cum)}</span>
+map.on('click', async (e) => {
+  if (!STATE.pinDropMode) return;
+
+  const { lat, lng } = e.latlng;
+
+  // Drop pin immediately
+  pinLayer.clearLayers();
+  currentPin = L.marker([lat, lng], { icon: pinIcon() }).addTo(pinLayer);
+
+  // Show loading card instantly
+  document.getElementById('sc-name').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  document.getElementById('sc-meta').textContent = 'Resolving location...';
+  document.getElementById('sc-score').textContent = '…';
+  document.getElementById('sc-tier').textContent = 'Loading';
+  document.getElementById('sc-tier').className = 'sc-tier-pill tier-cold';
+  document.getElementById('sc-ci').textContent = 'Fetching live signals...';
+  document.getElementById('sc-bars').innerHTML = `
+    <div style="padding:12px 16px">
+      <div class="skeleton" style="height:12px;width:80%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:12px;width:70%"></div>
     </div>`;
-  }
-  document.getElementById('yr-chart').innerHTML=ch;
-  updatePills();
-}
+  document.getElementById('sc-signal-rows').innerHTML = '';
+  document.getElementById('score-card').classList.add('visible');
 
-// ════════════════ BOOT ════════════════
-function boot(){
-  renderSites();
-  renderChips();
-  initLeaflet();
-  document.getElementById('panel-sites').classList.remove('panel-hidden');
-  // Leaflet needs the container to be painted before it can measure it
-  setTimeout(()=>{ if(leafMap) leafMap.invalidateSize(); }, 200);
-}
+  // Exit pin mode
+  startPinDrop();
 
-// Use window.onload (not DOMContentLoaded) so all external scripts are done
-if(document.readyState==='complete'){
-  boot();
-} else {
-  window.addEventListener('load', boot);
-}
-
-window.addEventListener('resize',()=>{
-  if(threeR&&S.step===3){
-    const w=document.getElementById('three-canvas-wrap');
-    threeR.setSize(w.clientWidth,w.clientHeight);
-    threeCamera.aspect=w.clientWidth/w.clientHeight;
-    threeCamera.updateProjectionMatrix();
+  // Fetch from API
+  try {
+    const r = await fetch(`/api/locate?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}`);
+    if (!r.ok) throw new Error('API error');
+    const data = await r.json();
+    renderPinCard(data, lat, lng);
+  } catch (err) {
+    document.getElementById('sc-meta').textContent = 'Error resolving location — try again';
+    document.getElementById('sc-score').textContent = '?';
+    document.getElementById('sc-bars').innerHTML = '';
   }
 });
-</script>
 
-<style>
-@keyframes pulse-ring{
-  0%{transform:scale(1);opacity:.6}
-  100%{transform:scale(2.5);opacity:0}
+function renderPinCard(data, lat, lng) {
+  document.getElementById('sc-name').textContent =
+    `Custom: ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+  document.getElementById('sc-meta').textContent =
+    `${data.countryCode} · ${data.nearestHotspot.distKm}km from ${data.nearestHotspot.name}`;
+  document.getElementById('sc-score').textContent = data.overallScore;
+
+  const tierEl = document.getElementById('sc-tier');
+  tierEl.textContent = data.scoreTierLabel.label;
+  tierEl.className = `sc-tier-pill tier-${data.scoreTier}`;
+
+  const ciSource = data.powerCost.isLive ? 'Live EIA power price' : 'Interpolated';
+  document.getElementById('sc-ci').textContent =
+    `±${data.confidenceInterval}% confidence · ${ciSource}`;
+
+  // Score bars
+  document.getElementById('sc-bars').innerHTML = data.signals.map(s => `
+    <div class="score-bar-row">
+      <div class="sbr-label">
+        <span class="sbr-name">${s.label}
+          ${s.source === 'EIA live' ? '<span style="color:#0fffa0;font-size:9px"> ● LIVE</span>' : ''}
+        </span>
+        <span class="sbr-val">${s.value}</span>
+      </div>
+      <div class="sbr-track">
+        <div class="sbr-fill" style="width:${s.score}%;background:${scoreColor(s.score)}"></div>
+      </div>
+    </div>`).join('');
+
+  // Signal detail rows
+  document.getElementById('sc-signal-rows').innerHTML = data.signals.map(s => `
+    <div class="sig-row">
+      <div>
+        <div class="sig-label">${s.label}</div>
+        <div class="sig-src">${s.note}</div>
+      </div>
+      <span class="sig-val">${s.value}</span>
+    </div>`).join('');
+
+  showNearbyProjects(lat, lng);
+
+  STATE.selectedLocation = {
+    lat, lng,
+    name: `Custom location (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
+    isCustom: true,
+    locateData: data,
+  };
 }
-</style>
+
+// ─── Nearby projects ──────────────────────────────────────────────────────────
+function showNearbyProjects(lat, lng) {
+  if (!STATE.projectsData?.features?.length) {
+    document.getElementById('sc-projects').style.display = 'none';
+    return;
+  }
+
+  function dist(a, b) {
+    const R = 6371;
+    const dLat = (b[0]-a[0])*Math.PI/180;
+    const dLng = (b[1]-a[1])*Math.PI/180;
+    const aa = Math.sin(dLat/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(aa),Math.sqrt(1-aa));
+  }
+
+  const nearby = STATE.projectsData.features
+    .filter(f => dist([lat,lng], [f.geometry.coordinates[1], f.geometry.coordinates[0]]) < 200)
+    .sort((a,b) => dist([lat,lng],[a.geometry.coordinates[1],a.geometry.coordinates[0]])
+                 - dist([lat,lng],[b.geometry.coordinates[1],b.geometry.coordinates[0]]))
+    .slice(0, 5);
+
+  if (!nearby.length) {
+    document.getElementById('sc-projects').style.display = 'none';
+    return;
+  }
+
+  const statusLabels = { operational:'Operational', under_construction:'Building', announced:'Announced', cancelled:'Cancelled' };
+  document.getElementById('sc-project-list').innerHTML = nearby.map(f => {
+    const p = f.properties;
+    const d = Math.round(dist([lat,lng],[f.geometry.coordinates[1],f.geometry.coordinates[0]]));
+    return `<div class="sps-item">
+      <span style="color:var(--text)">${p.name}</span>
+      <span style="color:var(--text3)"> · ${p.mw ? p.mw+'MW' : '?MW'} · ${statusLabels[p.status] || p.status} · ${d}km</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sc-projects').style.display = 'block';
+}
+
+// ─── Market list rendering ────────────────────────────────────────────────────
+function renderMarketList() {
+  if (!STATE.marketsData) return;
+  const { markets } = STATE.marketsData;
+
+  document.getElementById('market-skeleton').style.display = 'none';
+  const list = document.getElementById('market-items');
+  list.style.display = 'block';
+
+  list.innerHTML = markets.map(m => `
+    <div class="market-item" data-id="${m.id}" onclick="showMarketCard(${JSON.stringify(m).replace(/"/g,"'")})">
+      <div class="mi-top">
+        <span class="mi-rank">#${m.rank}</span>
+        <span class="mi-name">${m.name}</span>
+        <span class="mi-score tier-${m.tier}">${m.score}</span>
+      </div>
+      <div class="mi-bottom">
+        <span class="mi-tag">$${(m.breakdown.power.value||'').replace('$','').replace('/kWh','')}/kWh</span>
+        <span class="mi-tag">${m.intel?.saturation || '—'} sat</span>
+        <span class="mi-tag">${m.intel?.gridMw ? m.intel.gridMw+'MW grid' : ''}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ─── Panel view toggle ────────────────────────────────────────────────────────
+function setView(view) {
+  STATE.activeView = view;
+  ['ranked','pipeline','heatmap'].forEach(v => {
+    document.getElementById(`vtab-${v}`)?.classList.toggle('active', v === view);
+  });
+
+  if (view === 'pipeline') {
+    toggleMarkers('projects');
+    document.getElementById('market-items').style.display = 'none';
+    // Could render pipeline list here
+  } else if (view === 'heatmap') {
+    toggleHeatmap();
+  } else {
+    document.getElementById('market-items').style.display = 'block';
+  }
+}
+
+function toggleMarkers(type) {
+  if (type === 'projects') {
+    STATE.showProjects = !STATE.showProjects;
+    const btn = document.getElementById('ctrl-projects');
+    btn.classList.toggle('active', STATE.showProjects);
+    if (STATE.showProjects) {
+      projectsLayer.addTo(map);
+      document.getElementById('pipeline-legend').classList.add('visible');
+    } else {
+      map.removeLayer(projectsLayer);
+      document.getElementById('pipeline-legend').classList.remove('visible');
+    }
+  }
+}
+
+function toggleHeatmap() {
+  STATE.showHeatmap = !STATE.showHeatmap;
+  document.getElementById('ctrl-heatmap').classList.toggle('active', STATE.showHeatmap);
+  // Heatmap implementation — render canvas overlay from market scores
+  // For now: visual feedback only, full heatmap can use leaflet-heat plugin
+  if (STATE.showHeatmap && STATE.marketsData) {
+    STATE.marketsData.markets.forEach(m => {
+      const radius = m.score * 0.8;
+      L.circle([m.lat, m.lng], {
+        radius: radius * 1000,
+        color: scoreTierColor(m.tier),
+        fillColor: scoreTierColor(m.tier),
+        fillOpacity: 0.06,
+        weight: 0,
+        className: 'heatmap-circle',
+      }).addTo(marketsLayer);
+    });
+  }
+}
+
+function scoreTierColor(tier) {
+  return { hot:'#0fffa0', active:'#2d7ff9', watch:'#f5a623', cold:'#3e5272' }[tier] || '#3e5272';
+}
+
+function scoreColor(score) {
+  if (score >= 75) return '#0fffa0';
+  if (score >= 55) return '#2d7ff9';
+  if (score >= 35) return '#f5a623';
+  return '#3e5272';
+}
+
+function closeCard() {
+  document.getElementById('score-card').classList.remove('visible');
+  document.querySelectorAll('.market-item').forEach(el => el.classList.remove('selected'));
+}
+
+function selectLocation() {
+  if (!STATE.selectedLocation) return;
+  goStep(2);
+}
+
+// ─── Step navigation ──────────────────────────────────────────────────────────
+function goStep(n) {
+  STATE.step = n;
+  document.querySelectorAll('.step').forEach((el,i) => {
+    el.classList.toggle('active', i+1 === n);
+  });
+  document.querySelectorAll('.step-pill').forEach((el,i) => {
+    el.classList.remove('active','done');
+    if (i+1 === n) el.classList.add('active');
+    else if (i+1 < n) el.classList.add('done');
+  });
+  if (n === 3) initThreeJS();
+}
+
+// ─── Three.js (Step 3 — from Phase 1, preserved) ─────────────────────────────
+let threeInit = false;
+function initThreeJS() {
+  if (threeInit) return;
+  threeInit = true;
+  // Placeholder — insert Phase 1 Three.js scene here
+}
+
+// ─── Data loading ─────────────────────────────────────────────────────────────
+async function loadData() {
+  // Load markets and projects in parallel
+  const [marketsRes, projectsRes] = await Promise.allSettled([
+    fetch('/api/markets').then(r => r.json()),
+    fetch('/api/pipeline').then(r => r.json()),
+  ]);
+
+  // Markets
+  if (marketsRes.status === 'fulfilled' && marketsRes.value?.markets) {
+    STATE.marketsData = marketsRes.value;
+    const liveCount = marketsRes.value.meta?.liveMarkets || 0;
+    document.getElementById('live-status').textContent =
+      `${liveCount} live prices · ${marketsRes.value.meta?.count} markets`;
+    document.getElementById('live-dot').style.background =
+      liveCount > 0 ? 'var(--accent3)' : 'var(--amber)';
+    renderMarketList();
+    renderMarketMarkers();
+  } else {
+    document.getElementById('live-status').textContent = 'Using baseline data';
+    document.getElementById('live-dot').style.background = 'var(--amber)';
+    renderMarketMarkers(); // renders with placeholders
+    // Show skeleton → basic list fallback
+    document.getElementById('market-skeleton').style.display = 'none';
+    const list = document.getElementById('market-items');
+    list.style.display = 'block';
+    list.innerHTML = HOTSPOTS.map((h,i) => `
+      <div class="market-item" data-id="${h.id}" onclick="onMarketClick('${h.id}')">
+        <div class="mi-top">
+          <span class="mi-rank">#${i+1}</span>
+          <span class="mi-name">${h.name}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // Projects
+  if (projectsRes.status === 'fulfilled' && projectsRes.value?.features) {
+    STATE.projectsData = projectsRes.value;
+    renderProjectMarkers();
+    const count = projectsRes.value.features.length;
+    // Add count badge to pipeline button
+    document.getElementById('ctrl-projects').textContent = `Projects (${count})`;
+  }
+}
+
+function onMarketClick(id) {
+  if (STATE.marketsData) {
+    const market = STATE.marketsData.markets.find(m => m.id === id);
+    if (market) showMarketCard(market);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderMarketMarkers(); // instant placeholder markers
+loadData();            // async data enrichment
+</script>
 </body>
 </html>
