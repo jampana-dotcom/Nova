@@ -25,252 +25,326 @@
   --aglow:  rgba(45,127,249,0.4);
   --amber:  #f5a623;
   --red:    #ef4444;
+  --green:  #10b981;
   --shadow: 0 32px 80px rgba(0,0,0,0.65), 0 6px 20px rgba(0,0,0,0.4);
+  /* compat aliases for Step 2-4 original styles */
+  --surface:rgba(9,14,28,0.94);
+  --surface2:rgba(13,21,40,0.97);
+  --border-bright:rgba(255,255,255,0.12);
+  --accent-dim:rgba(45,127,249,0.15);
+  --accent-glow:rgba(45,127,249,0.35);
+  --green-dim:rgba(16,185,129,0.12);
+  --red-dim:rgba(239,68,68,0.12);
+  --amber-dim:rgba(245,158,11,0.12);
+  --r:10px; --rs:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--text);font-family:'DM Sans',sans-serif}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;}
 
-/* Background grid */
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:repeating-linear-gradient(rgba(45,127,249,0.038) 0 1px,transparent 1px 58px),
-                   repeating-linear-gradient(90deg,rgba(45,127,249,0.038) 0 1px,transparent 1px 58px);
-}
-body::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,127,249,0.11) 0%,transparent 70%);
-}
+                   repeating-linear-gradient(90deg,rgba(45,127,249,0.038) 0 1px,transparent 1px 58px);}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(45,127,249,0.11) 0%,transparent 70%);}
 
-/* ── Topbar ───────────────────────────────────────────────────────────────── */
-#topbar{
-  position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
+/* ── Topbar ── */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;
   background:rgba(5,8,15,0.92);backdrop-filter:blur(28px);
   border-bottom:1px solid var(--border2);
-  display:flex;align-items:center;padding:0 20px;gap:16px;
-}
+  display:flex;align-items:center;padding:0 20px;gap:16px;}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:2px;
   text-transform:uppercase;color:var(--text);margin-right:8px}
 .logo span{color:var(--accent)}
 .step-indicators{display:flex;gap:6px;flex:1}
-.step-pill{
-  padding:4px 14px;border-radius:20px;font-family:'Syne',sans-serif;
+.step-pill{padding:4px 14px;border-radius:20px;font-family:'Syne',sans-serif;
   font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-  border:1px solid var(--border2);color:var(--text3);background:transparent;cursor:pointer;
-  transition:all .2s;
-}
+  border:1px solid var(--border2);color:var(--text3);background:transparent;cursor:pointer;transition:all .2s;}
 .step-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .step-pill.done{background:rgba(15,255,160,0.12);border-color:rgba(15,255,160,0.3);color:var(--accent3)}
 .metric-pills{display:flex;gap:8px;margin-left:auto}
-.mpill{
-  display:flex;align-items:center;gap:6px;padding:4px 10px;
+.mpill{display:flex;align-items:center;gap:6px;padding:4px 10px;
   background:var(--ink2);border:1px solid var(--border);border-radius:4px;
-  font-family:'DM Mono',monospace;font-size:11px;
-}
+  font-family:'DM Mono',monospace;font-size:11px;}
 .mpill-label{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:1px}
 .mpill-val{color:var(--accent2);font-weight:500}
 
-/* ── Main layout ──────────────────────────────────────────────────────────── */
-#app{position:fixed;top:52px;left:0;right:0;bottom:0;display:flex;z-index:1}
-.step{width:100%;height:100%;display:none;position:relative}
-.step.active{display:flex}
+/* ── App layout ── */
+#app{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1;}
+.step{width:100%;height:100%;display:none;position:relative;}
+.step.active{display:block;}
+#step1{display:none;}
+#step1.active{display:flex;flex-direction:row;}
 
-/* ── Step 1: Site Selection ───────────────────────────────────────────────── */
-#step1{flex-direction:row}
-#map{flex:1;z-index:1}
+/* ── Step 1: Map + Intelligence ── */
+#map{flex:1;z-index:1;}
 
-/* Left intelligence panel */
-#intel-panel{
-  width:340px;height:100%;overflow-y:auto;
+#intel-panel{width:320px;height:100%;overflow-y:auto;
   background:rgba(9,14,28,0.94);backdrop-filter:blur(28px) saturate(1.5);
-  border-right:1px solid var(--border2);z-index:10;display:flex;flex-direction:column;
-}
+  border-right:1px solid var(--border2);z-index:10;display:flex;flex-direction:column;}
 #intel-panel::-webkit-scrollbar{width:4px}
-#intel-panel::-webkit-scrollbar-track{background:transparent}
 #intel-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-.panel-header{
-  padding:16px;border-bottom:1px solid var(--border);
-  background:linear-gradient(180deg,rgba(45,127,249,0.06) 0%,transparent 100%);
-}
-.panel-title{
-  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;
-  text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-bottom:8px;
-}
-.panel-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
-.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);
-  animation:pulse 2s ease-in-out infinite}
+.panel-header{padding:14px 16px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(45,127,249,0.06) 0%,transparent 100%);}
+.panel-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:2px;color:var(--text2);margin-bottom:6px;}
+.panel-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3)}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--accent3);animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
-/* View toggle */
-.view-toggle{display:flex;gap:4px;padding:12px 16px;border-bottom:1px solid var(--border)}
-.vtab{
-  flex:1;padding:6px;text-align:center;font-family:'Syne',sans-serif;font-size:10px;
+.view-toggle{display:flex;gap:4px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.vtab{flex:1;padding:5px;text-align:center;font-family:'Syne',sans-serif;font-size:10px;
   font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
-  border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .15s;
-}
+  border:1px solid var(--border);color:var(--text3);background:transparent;transition:all .15s;}
 .vtab.active{background:rgba(45,127,249,0.15);border-color:var(--accent);color:var(--accent)}
 
-/* Market list */
-#market-list{flex:1;padding:8px}
-.market-item{
-  padding:10px 12px;margin-bottom:4px;cursor:pointer;
-  border:1px solid var(--border);background:transparent;
-  transition:all .15s;position:relative;overflow:hidden;
-}
-.market-item::before{
-  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
-  background:linear-gradient(180deg,var(--accent),var(--accent2));opacity:0;transition:.15s;
-}
+#market-list{flex:1;padding:6px}
+.market-item{padding:9px 11px;margin-bottom:3px;cursor:pointer;
+  border:1px solid var(--border);background:transparent;transition:all .15s;position:relative;overflow:hidden;}
+.market-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));opacity:0;transition:.15s;}
 .market-item:hover{background:var(--ink3);border-color:var(--border2)}
-.market-item:hover::before{opacity:1}
+.market-item:hover::before,.market-item.selected::before{opacity:1}
 .market-item.selected{background:rgba(45,127,249,0.08);border-color:var(--accent)}
-.market-item.selected::before{opacity:1}
-
-.mi-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.mi-top{display:flex;align-items:center;gap:8px;margin-bottom:3px}
 .mi-rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:20px}
-.mi-name{font-size:13px;font-weight:500;flex:1}
-.mi-score{
-  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
-  padding:2px 6px;border-radius:3px;
-}
-.mi-bottom{display:flex;gap:8px;font-size:11px;color:var(--text3)}
-.mi-tag{
-  padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace;font-size:10px;
-  background:rgba(255,255,255,0.04);border:1px solid var(--border);
-}
+.mi-name{font-size:12px;font-weight:500;flex:1}
+.mi-score{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:2px 6px;border-radius:3px;}
+.mi-bottom{display:flex;gap:6px;font-size:10px;color:var(--text3)}
+.mi-tag{padding:2px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:9px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);}
 
-/* Loading skeleton */
-.skeleton{
-  background:linear-gradient(90deg,var(--ink2) 25%,var(--ink3) 50%,var(--ink2) 75%);
-  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:3px;
-}
+.skeleton{background:linear-gradient(90deg,var(--ink2) 25%,var(--ink3) 50%,var(--ink2) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:3px;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-/* Score tier colors */
-.tier-hot   {color:#0fffa0;background:rgba(15,110,86,0.25);border-color:rgba(15,255,160,0.2)!important}
-.tier-active{color:#60a5fa;background:rgba(24,95,165,0.25);border-color:rgba(45,127,249,0.3)!important}
-.tier-watch {color:#f5a623;background:rgba(186,117,23,0.25);border-color:rgba(245,166,35,0.3)!important}
-.tier-cold  {color:#8a9fc0;background:rgba(62,82,114,0.15);border-color:var(--border)!important}
+.tier-hot   {color:#0fffa0;background:rgba(15,110,86,0.25);}
+.tier-active{color:#60a5fa;background:rgba(24,95,165,0.25);}
+.tier-watch {color:#f5a623;background:rgba(186,117,23,0.25);}
+.tier-cold  {color:#8a9fc0;background:rgba(62,82,114,0.15);}
 
-/* ── Score card (right panel, shown on pin/market click) ─────────────────── */
-#score-card{
-  position:absolute;right:16px;top:16px;width:320px;z-index:100;
+/* ── Score card ── */
+#score-card{position:absolute;right:16px;top:16px;width:330px;max-height:calc(100vh - 84px);overflow-y:auto;z-index:100;
   background:rgba(9,14,28,0.96);backdrop-filter:blur(28px) saturate(1.5);
-  border:1px solid var(--border2);box-shadow:var(--shadow);
-  display:none;
-}
-#score-card.visible{display:block}
-#score-card::before{
-  content:'';display:block;height:2px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));
-}
-.sc-header{padding:14px 16px;border-bottom:1px solid var(--border)}
+  border:1px solid var(--border2);box-shadow:var(--shadow);display:none;}
+#score-card::-webkit-scrollbar{width:3px}
+#score-card::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+#score-card.visible{display:block;}
+#score-card::before{content:'';display:block;height:2px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent3));}
+.sc-header{padding:12px 14px;border-bottom:1px solid var(--border)}
 .sc-location{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.sc-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.5px;line-height:1.2}
-.sc-close{
-  background:none;border:1px solid var(--border);color:var(--text3);width:24px;height:24px;
-  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
+.sc-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:-0.5px;line-height:1.2}
+.sc-close{background:none;border:1px solid var(--border);color:var(--text3);width:22px;height:22px;
+  cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .sc-close:hover{border-color:var(--border2);color:var(--text)}
-.sc-meta{margin-top:4px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
-
-.sc-score-row{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.sc-big-score{
-  font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1;
-  color:var(--accent3);
-}
+.sc-meta{margin-top:3px;font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.sc-score-row{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sc-big-score{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;line-height:1;color:var(--accent3);}
 .sc-score-right{flex:1}
-.sc-tier-pill{
-  display:inline-block;padding:3px 10px;font-family:'Syne',sans-serif;
-  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;
-}
-.sc-ci{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
-
-/* Score bar component */
-.score-bar-row{padding:8px 16px;display:flex;flex-direction:column;gap:4px}
-.sbr-label{display:flex;justify-content:space-between;font-size:11px}
-.sbr-name{color:var(--text2)}
-.sbr-val{font-family:'DM Mono',monospace;color:var(--text3)}
-.sbr-track{height:3px;background:rgba(255,255,255,0.06);overflow:hidden}
+.sc-tier-pill{display:inline-block;padding:3px 9px;font-family:'Syne',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.sc-ci{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.score-bar-row{padding:6px 14px;display:flex;flex-direction:column;gap:3px}
+.sbr-label{display:flex;justify-content:space-between;font-size:10px}
+.sbr-name{color:var(--text2)}.sbr-val{font-family:'DM Mono',monospace;color:var(--text3)}
+.sbr-track{height:2px;background:rgba(255,255,255,0.06);overflow:hidden}
 .sbr-fill{height:100%;transition:width .6s cubic-bezier(.4,0,.2,1)}
-
-.sc-signals{border-top:1px solid var(--border);padding:12px 16px}
+.sc-signals{border-top:1px solid var(--border);padding:10px 14px}
 .sc-sig-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.sig-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.sig-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0;
   border-bottom:1px solid rgba(255,255,255,0.03)}
 .sig-row:last-child{border-bottom:none}
-.sig-label{font-size:11px;color:var(--text2)}
-.sig-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text)}
-.sig-src{font-size:9px;color:var(--text3);margin-top:1px}
-
-/* Project details strip */
-.sc-project-strip{
-  border-top:1px solid var(--border);padding:10px 16px;
-  background:rgba(45,127,249,0.04);
-}
-.sps-title{font-size:10px;color:var(--text3);text-transform:uppercase;
-  letter-spacing:1.5px;font-family:'Syne',sans-serif;margin-bottom:6px}
-.sps-item{font-size:11px;color:var(--text2);padding:2px 0}
-
-.sc-actions{padding:12px 16px;display:flex;gap:8px;border-top:1px solid var(--border)}
-.btn-primary{
-  flex:1;padding:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;
-  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;transition:opacity .15s;
-}
+.sig-label{font-size:10px;color:var(--text2)}.sig-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--text)}
+.sc-project-strip{border-top:1px solid var(--border);padding:8px 14px;background:rgba(45,127,249,0.04);}
+.sps-title{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-family:'Syne',sans-serif;margin-bottom:5px}
+.sps-item{font-size:10px;color:var(--text2);padding:2px 0}
+.sc-actions{padding:10px 14px;display:flex;gap:8px;border-top:1px solid var(--border)}
+.btn-primary{flex:1;padding:9px;background:var(--accent);color:#fff;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:opacity .15s;}
 .btn-primary:hover{opacity:.85}
-.btn-secondary{
-  padding:10px 14px;background:transparent;color:var(--text2);
-  border:1px solid var(--border2);cursor:pointer;
-  font-family:'Syne',sans-serif;font-size:11px;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;
-}
+.btn-secondary{padding:9px 12px;background:transparent;color:var(--text2);border:1px solid var(--border2);
+  cursor:pointer;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;}
 .btn-secondary:hover{border-color:var(--border3);color:var(--text)}
+.grid-panel{border-top:1px solid var(--border);padding:10px 14px;}
+.grid-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer;}
+.grid-panel-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.grid-loading{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text3);padding:4px 0;}
+.grid-spinner{width:10px;height:10px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.grid-stat-row{display:flex;align-items:flex-start;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.grid-stat-row:last-child{border-bottom:none}
+.grid-stat-label{font-size:10px;color:var(--text2);line-height:1.4;}
+.grid-stat-sub{font-size:9px;color:var(--text3);margin-top:1px;}
+.grid-stat-val{text-align:right;flex-shrink:0;margin-left:8px;}
+.grid-stat-val span{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;}
+.grid-stat-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+.mix-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;margin:6px 0 4px;}
+.mix-segment{height:100%;transition:width .4s ease;}
+.mix-legend{display:flex;flex-wrap:wrap;gap:4px 10px;}
+.mix-item{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text3);}
+.mix-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.live-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:var(--accent3);font-family:'DM Mono',monospace;}
+.live-badge::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--accent3);animation:pulse 2s infinite;}
+.grid-toggle{font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;}
+.grid-kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px;}
+.grid-kpi{background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:7px;text-align:center;}
+.grid-kpi-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;line-height:1;margin-bottom:3px;}
+.grid-kpi-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;}
+.grid-mix-bar{margin-bottom:8px;}
+.grid-mix-label{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:3px;}
+.grid-mix-track{height:7px;display:flex;overflow:hidden;border-radius:2px;gap:1px;}
+.grid-mix-seg{height:100%;transition:width .6s ease;}
+.grid-detail-row{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:10px;}
+.grid-detail-row:last-child{border-bottom:none;}
+.grid-detail-label{color:var(--text2);min-width:80px;}
+.grid-detail-val{font-family:'DM Mono',monospace;color:var(--text);text-align:right;max-width:160px;}
+.grid-detail-val.green{color:var(--accent3)}.grid-detail-val.amber{color:var(--amber)}.grid-detail-val.red{color:var(--red)}
+.grid-live-badge{font-size:9px;color:var(--accent3);font-family:'DM Mono',monospace;margin-left:3px;}
+.ppa-pill{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;}
+.ppa-yes{background:rgba(15,255,160,0.12);color:var(--accent3);border:1px solid rgba(15,255,160,0.2);}
+.ppa-no{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.grid-loading{text-align:center;padding:12px;color:var(--text3);font-size:10px;font-family:'DM Mono',monospace;}
 
-/* ── Map controls ─────────────────────────────────────────────────────────── */
-#map-controls{
-  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;gap:8px;z-index:100;
-}
-.map-ctrl-btn{
-  padding:7px 14px;background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);
+/* Map controls */
+#map-controls{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;}
+.map-ctrl-btn{padding:6px 12px;background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);
   border:1px solid var(--border2);color:var(--text2);cursor:pointer;
-  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
-  letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;
-}
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;transition:all .15s;}
 .map-ctrl-btn:hover{border-color:var(--accent);color:var(--accent)}
 .map-ctrl-btn.active{background:rgba(45,127,249,0.15);border-color:var(--accent);color:var(--accent)}
 
-/* Pipeline legend */
-#pipeline-legend{
-  position:absolute;bottom:60px;left:16px;z-index:100;
-  background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);
-  border:1px solid var(--border2);padding:10px 14px;display:none;
-}
-#pipeline-legend.visible{display:block}
-.pl-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.pl-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;color:var(--text2)}
-.pl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#pipeline-legend{position:absolute;bottom:56px;left:330px;z-index:100;
+  background:rgba(9,14,28,0.92);backdrop-filter:blur(20px);border:1px solid var(--border2);
+  padding:8px 12px;display:none;}
+#pipeline-legend.visible{display:block;}
+.pl-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.pl-item{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:10px;color:var(--text2)}
+.pl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
-/* ── Steps 2-4 ────────────────────────────────────────────────────────────── */
-#step2,#step3,#step4{
-  flex-direction:column;overflow-y:auto;padding:24px;gap:24px;
-  background:var(--ink);
-}
-.step-inner{max-width:1100px;margin:0 auto;width:100%}
+/* ── Grid Intelligence Panel ── */
+.sc-grid-panel{border-top:1px solid var(--border);padding:0;}
+.sc-grid-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);}
+.sc-grid-header:hover{color:var(--text2);}
+.sc-grid-header .chevron{transition:transform .2s;font-size:10px;}
+.sc-grid-header.open .chevron{transform:rotate(180deg);}
+.sc-grid-body{display:none;padding:0 14px 12px;}
+.sc-grid-body.open{display:block;}
+.mix-bar-wrap{margin-bottom:10px;}
+.mix-bar-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:4px;}
+.mix-bar{height:6px;border-radius:3px;display:flex;overflow:hidden;gap:1px;}
+.mix-seg{height:100%;transition:width .5s;}
+.gstat{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03);}
+.gstat:last-child{border-bottom:none;}
+.gstat-label{font-size:10px;color:var(--text2);}
+.gstat-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--text);display:flex;align-items:center;gap:5px;}
+.gstat-badge{padding:1px 5px;border-radius:2px;font-size:9px;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:1px;}
+.badge-good{background:rgba(15,110,86,0.25);color:#0fffa0;}
+.badge-warn{background:rgba(186,117,23,0.25);color:#f5a623;}
+.badge-bad{background:rgba(163,45,45,0.25);color:#ef4444;}
+.badge-info{background:rgba(45,127,249,0.2);color:#60a5fa;}
+.ppa-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.03);margin-top:4px;}
+.ppa-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.ppa-text{font-size:10px;color:var(--text2);line-height:1.4;}
+.ppa-rating{font-weight:600;color:var(--text);}
+.ren-progress{margin:6px 0;}
+.ren-track{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:3px;}
+.ren-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.live-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-family:'DM Mono',monospace;color:var(--accent3);background:rgba(15,255,160,0.08);padding:1px 5px;border-radius:2px;}
+.live-dot-sm{width:4px;height:4px;border-radius:50%;background:var(--accent3);}
+.static-badge{font-size:9px;color:var(--text3);}
+.utility-row{font-size:10px;color:var(--text3);padding:3px 0;}
+.utility-row span{color:var(--text2);}
+.dc-friendly{color:#0fffa0;}.dc-unfriendly{color:#ef4444;}
 
-/* ── Leaflet overrides ────────────────────────────────────────────────────── */
+/* ── Leaflet overrides ── */
 .leaflet-container{background:#05080f!important}
 .leaflet-control-zoom{border:1px solid var(--border2)!important;background:rgba(9,14,28,0.9)!important}
-.leaflet-control-zoom a{
-  background:rgba(9,14,28,0.9)!important;color:var(--text2)!important;
-  border-bottom:1px solid var(--border)!important;font-size:16px!important;line-height:26px!important;
-}
+.leaflet-control-zoom a{background:rgba(9,14,28,0.9)!important;color:var(--text2)!important;border-bottom:1px solid var(--border)!important;}
 .leaflet-control-zoom a:hover{background:var(--ink3)!important;color:var(--accent)!important}
 .leaflet-control-attribution{background:rgba(5,8,15,0.7)!important;color:var(--text3)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--text3)!important}
+
+/* ── Steps 2-4 layout ── */
+#step2,#step3,#step4{overflow:hidden;}
+#map-bg{position:fixed;inset:52px 0 0 0;z-index:0;}
+
+/* Floating panel base */
+.fp{position:fixed;z-index:500;background:var(--surface);backdrop-filter:blur(32px) saturate(1.5);
+  border:1px solid var(--border-bright);border-radius:var(--r);box-shadow:var(--shadow);
+  overflow:hidden;transition:opacity .2s ease,transform .2s ease;}
+.fp.hidden{opacity:0;pointer-events:none;transform:translateY(8px);}
+.fp-hd{padding:13px 16px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.fp-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.fp-title{font-weight:600;font-size:13px;color:var(--text);}
+.fp-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.fp-body{padding:12px 15px;overflow-y:auto;}
+
+/* Config panel */
+#fp-config{top:62px;right:14px;width:306px;max-height:calc(100vh - 78px);}
+.tabbar{display:flex;border-bottom:1px solid var(--border);margin:0 -15px 12px;padding:0 15px;}
+.tab{padding:8px 10px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;margin-bottom:-1px;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tabpanel{display:none;}.tabpanel.active{display:block;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:12px;}
+.cc{border:1px solid var(--border-bright);border-radius:8px;padding:9px;cursor:pointer;transition:all .14s;background:rgba(255,255,255,0.03);position:relative;}
+.cc:hover{border-color:var(--accent);background:var(--accent-dim);}
+.cc.sel{border-color:var(--accent);background:var(--accent-dim);}
+.cc.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;color:var(--accent);}
+.cbrand{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px;}
+.cname{font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.cspec{font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;line-height:1.75;}
+.cspec span{color:var(--accent);}
+.slrow{margin-bottom:13px;}
+.slhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.sllbl{font-size:12px;font-weight:500;color:var(--text2);}
+.slval{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;appearance:none;
+  background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,50%),rgba(255,255,255,0.1) var(--pct,50%),rgba(255,255,255,0.1) 100%);
+  border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 0 8px var(--accent-glow);cursor:pointer;}
+.btnp{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px;}
+.btnp:hover{background:#1a6ef5;box-shadow:0 4px 16px var(--accent-glow);}
+.btns{width:100%;padding:9px;background:transparent;color:var(--accent);border:1px solid rgba(45,127,249,0.3);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;}
+.btns:hover{background:var(--accent-dim);}
+.rev-radios{display:flex;gap:10px;margin-bottom:12px;}
+.rev-radios label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;}
+.rev-radios input[type=radio]{accent-color:var(--accent);width:13px;height:13px;}
+
+/* 3D panel */
+#fp-3d{top:62px;left:50%;transform:translateX(-50%);width:560px;max-width:calc(100vw - 340px);}
+#fp-3d.hidden{transform:translateX(-50%) translateY(8px);}
+#tcwrap{height:295px;background:#060b14;position:relative;overflow:hidden;}
+#tcanvas{width:100%!important;height:100%!important;display:block;}
+.cvctrl{position:absolute;bottom:9px;right:9px;display:flex;gap:5px;}
+.cvbtn{background:rgba(255,255,255,0.07);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);border-radius:6px;padding:4px 9px;font-size:11px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;}
+.cvbtn:hover{background:rgba(255,255,255,0.14);}
+.cvleg{position:absolute;top:9px;left:9px;display:flex;flex-direction:column;gap:4px;}
+.lgi{display:flex;align-items:center;gap:5px;}
+.lgd{width:8px;height:8px;border-radius:2px;}
+.lgl{font-size:10px;color:rgba(255,255,255,0.45);font-family:'DM Mono',monospace;}
+.fstats{display:flex;border-top:1px solid var(--border);}
+.fst{flex:1;padding:9px 12px;border-right:1px solid var(--border);text-align:center;}
+.fst:last-child{border-right:none;}
+.fstv{font-size:14px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);}
+.fstl{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* Finance panel */
+#fp-fin{bottom:14px;left:50%;transform:translateX(-50%);width:860px;max-width:calc(100vw - 28px);}
+#fp-fin.hidden{transform:translateX(-50%) translateY(10px);}
+.finhdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.fingrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px 15px;}
+.fm{text-align:center;padding:10px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);}
+.fml{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;font-weight:500;}
+.fmv{font-size:17px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;}
+.fms{font-size:10px;color:var(--text3);margin-top:3px;}
+.pill{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:20px;white-space:nowrap;}
+.pill-blue{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(45,127,249,0.2);}
+.pill-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,0.2);}
+.pill-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.pill-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,0.2);}
 </style>
 </head>
 <body>
@@ -294,10 +368,8 @@ body::after{
 
 <div id="app">
 
-<!-- ── STEP 1: Site Selection ────────────────────────────────────────────── -->
+<!-- ── STEP 1: Site Selection ── -->
 <div class="step active" id="step1">
-
-  <!-- Left intelligence panel -->
   <div id="intel-panel">
     <div class="panel-header">
       <div class="panel-title">Market Intelligence</div>
@@ -312,36 +384,30 @@ body::after{
       <div class="vtab" onclick="setView('heatmap')" id="vtab-heatmap">Heatmap</div>
     </div>
     <div id="market-list">
-      <!-- Skeleton loading -->
       <div id="market-skeleton">
-        ${Array(8).fill(0).map(()=>`
-        <div style="padding:10px 12px;margin-bottom:4px;border:1px solid var(--border)">
-          <div style="display:flex;gap:8px;margin-bottom:6px">
-            <div class="skeleton" style="width:20px;height:14px"></div>
-            <div class="skeleton" style="flex:1;height:14px"></div>
-            <div class="skeleton" style="width:36px;height:14px"></div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <div class="skeleton" style="width:60px;height:10px"></div>
-            <div class="skeleton" style="width:50px;height:10px"></div>
-          </div>
-        </div>`).join('')}
+        <div style="padding:9px 11px;margin-bottom:3px;border:1px solid var(--border)">
+          <div style="display:flex;gap:8px;margin-bottom:5px"><div class="skeleton" style="width:20px;height:12px"></div><div class="skeleton" style="flex:1;height:12px"></div><div class="skeleton" style="width:32px;height:12px"></div></div>
+          <div style="display:flex;gap:5px"><div class="skeleton" style="width:55px;height:9px"></div><div class="skeleton" style="width:45px;height:9px"></div></div>
+        </div>
+        <div style="padding:9px 11px;margin-bottom:3px;border:1px solid var(--border)">
+          <div style="display:flex;gap:8px;margin-bottom:5px"><div class="skeleton" style="width:20px;height:12px"></div><div class="skeleton" style="flex:1;height:12px"></div><div class="skeleton" style="width:32px;height:12px"></div></div>
+          <div style="display:flex;gap:5px"><div class="skeleton" style="width:55px;height:9px"></div><div class="skeleton" style="width:45px;height:9px"></div></div>
+        </div>
+        <div style="padding:9px 11px;margin-bottom:3px;border:1px solid var(--border)">
+          <div style="display:flex;gap:8px;margin-bottom:5px"><div class="skeleton" style="width:20px;height:12px"></div><div class="skeleton" style="flex:1;height:12px"></div><div class="skeleton" style="width:32px;height:12px"></div></div>
+          <div style="display:flex;gap:5px"><div class="skeleton" style="width:55px;height:9px"></div><div class="skeleton" style="width:45px;height:9px"></div></div>
+        </div>
       </div>
       <div id="market-items" style="display:none"></div>
     </div>
   </div>
 
-  <!-- Map -->
   <div id="map"></div>
 
-  <!-- Score card -->
   <div id="score-card">
     <div class="sc-header">
       <div class="sc-location">
-        <div>
-          <div class="sc-name" id="sc-name">—</div>
-          <div class="sc-meta" id="sc-meta">—</div>
-        </div>
+        <div><div class="sc-name" id="sc-name">—</div><div class="sc-meta" id="sc-meta">—</div></div>
         <button class="sc-close" onclick="closeCard()">✕</button>
       </div>
     </div>
@@ -352,17 +418,35 @@ body::after{
         <div class="sc-ci" id="sc-ci">—</div>
       </div>
     </div>
-    <!-- Score breakdown bars -->
     <div id="sc-bars"></div>
-    <!-- Key signals -->
     <div class="sc-signals">
       <div class="sc-sig-title">Signal Breakdown</div>
       <div id="sc-signal-rows"></div>
     </div>
-    <!-- Nearby projects -->
     <div class="sc-project-strip" id="sc-projects" style="display:none">
       <div class="sps-title">Nearby Projects</div>
       <div id="sc-project-list"></div>
+    </div>
+    <!-- Grid Intelligence Panel -->
+    <div class="sc-grid-panel" id="sc-grid-panel" style="display:none">
+      <div class="sc-grid-header" id="sc-grid-toggle" onclick="toggleGridPanel()">
+        <span>⚡ Grid Intelligence</span>
+        <span class="chevron">▾</span>
+      </div>
+      <div class="sc-grid-body" id="sc-grid-body">
+        <div id="sc-grid-loading" style="padding:8px 0;text-align:center;font-size:10px;color:var(--text3)">Loading grid data...</div>
+        <div id="sc-grid-content" style="display:none"></div>
+      </div>
+    </div>
+    <div class="sc-actions">
+      <button class="btn-primary" onclick="selectLocation()">Select This Location</button>
+      <button class="btn-secondary" onclick="closeCard()">Close</button>
+    </div>
+  </div>
+      <div id="grid-panel-body" style="display:none">
+        <div class="grid-loading" id="grid-loading">Loading grid data...</div>
+        <div id="grid-content"></div>
+      </div>
     </div>
     <div class="sc-actions">
       <button class="btn-primary" onclick="selectLocation()">Select This Location</button>
@@ -370,15 +454,13 @@ body::after{
     </div>
   </div>
 
-  <!-- Map controls -->
   <div id="map-controls">
-    <button class="map-ctrl-btn active" id="ctrl-markets" onclick="toggleMarkers('markets')">Markets</button>
+    <button class="map-ctrl-btn active" onclick="toggleMarkers('markets')">Markets</button>
     <button class="map-ctrl-btn" id="ctrl-projects" onclick="toggleMarkers('projects')">Projects</button>
     <button class="map-ctrl-btn" id="ctrl-heatmap" onclick="toggleHeatmap()">Heatmap</button>
     <button class="map-ctrl-btn" id="ctrl-pin" onclick="startPinDrop()">+ Drop Pin</button>
   </div>
 
-  <!-- Pipeline legend -->
   <div id="pipeline-legend">
     <div class="pl-title">Project Status</div>
     <div class="pl-item"><div class="pl-dot" style="background:#0F6E56"></div>Operational</div>
@@ -386,597 +468,1049 @@ body::after{
     <div class="pl-item"><div class="pl-dot" style="background:#7F77DD"></div>Announced</div>
     <div class="pl-item"><div class="pl-dot" style="background:#888780"></div>Cancelled / hold</div>
   </div>
+</div>
 
-</div><!-- /step1 -->
-
-<!-- ── STEP 2: Configuration ─────────────────────────────────────────────── -->
+<!-- ── STEP 2: Configuration ── -->
 <div class="step" id="step2">
-  <div class="step-inner">
-    <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:24px">CONFIGURATION</h2>
-    <!-- Step 2 content preserved from Phase 1 simulator.html — insert here -->
-    <p style="color:var(--text2)">Step 2 configuration UI — insert from existing simulator.html</p>
+  <!-- Map background (same tiles, no interaction) -->
+  <div id="map2" style="position:fixed;inset:52px 0 0 0;z-index:0;filter:brightness(0.4)"></div>
+  <!-- Config panel -->
+  <div class="fp" id="fp-config">
+    <div class="fp-hd">
+      <div class="fp-ico" style="background:rgba(16,185,129,0.15)">⚙️</div>
+      <div><div class="fp-title">Data Center Design</div><div class="fp-sub" id="cfg-sub">Configure hardware & capacity</div></div>
+    </div>
+    <div class="fp-body" style="max-height:calc(100vh - 190px);overflow-y:auto;">
+      <div class="tabbar">
+        <div class="tab active" onclick="ctab('hw',this)">Hardware</div>
+        <div class="tab" onclick="ctab('cap',this)">Capacity</div>
+        <div class="tab" onclick="ctab('rev',this)">Revenue</div>
+      </div>
+      <div class="tabpanel active" id="tp-hw">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;">Chip Architecture</div>
+        <div class="cgrid" id="cgrid"></div>
+      </div>
+      <div class="tabpanel" id="tp-cap">
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">IT Load Capacity</span><span class="slval" id="vmw">100 MW</span></div>
+          <input type="range" min="5" max="1000" value="100" step="5" id="slmw" oninput="sl(this,'vmw',v=>v+' MW','mw')">
+        </div>
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">Rack Density</span><span class="slval" id="vden">30 kW/rack</span></div>
+          <input type="range" min="5" max="120" value="30" step="5" id="slden" oninput="sl(this,'vden',v=>v+' kW/rack','density')">
+        </div>
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">Utilization Rate</span><span class="slval" id="vutil">75%</span></div>
+          <input type="range" min="20" max="95" value="75" id="slutil" oninput="sl(this,'vutil',v=>v+'%','util')">
+        </div>
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">Redundancy</span><span class="slval" id="vred">2N</span></div>
+          <input type="range" min="1" max="3" value="2" step="1" id="slred" oninput="slred(this)">
+        </div>
+      </div>
+      <div class="tabpanel" id="tp-rev">
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">GPU Rental ($/hr/chip)</span><span class="slval" id="vprice">$2.50</span></div>
+          <input type="range" min="0.5" max="10" value="2.5" step="0.1" id="slprice" oninput="sl(this,'vprice',v=>'$'+parseFloat(v).toFixed(2),'gpuPrice')">
+        </div>
+        <div class="slrow">
+          <div class="slhdr"><span class="sllbl">Colo Rate ($/rack/mo)</span><span class="slval" id="vcolo">$1,500</span></div>
+          <input type="range" min="500" max="6000" value="1500" step="100" id="slcolo" oninput="sl(this,'vcolo',v=>'$'+parseInt(v).toLocaleString(),'coloRate')">
+        </div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:8px;margin-top:4px;">Revenue Mix</div>
+        <div class="rev-radios">
+          <label><input type="radio" name="rmx" value="gpu" checked onchange="S.revMix=this.value;recalc()"> GPU Cloud</label>
+          <label><input type="radio" name="rmx" value="colo" onchange="S.revMix=this.value;recalc()"> Colocation</label>
+          <label><input type="radio" name="rmx" value="mixed" onchange="S.revMix=this.value;recalc()"> Mixed</label>
+        </div>
+      </div>
+      <button class="btnp" onclick="buildFacility()">Generate Facility View →</button>
+      <button class="btns" onclick="goStep(1)">← Change Location</button>
+    </div>
+  </div>
+  <!-- Finance panel shown from step 2 onward -->
+  <div class="fp" id="fp-fin2">
+    <div class="finhdr">
+      <div class="fp-ico" style="background:rgba(16,185,129,0.15)">📊</div>
+      <div style="flex:1"><div class="fp-title">Financial Summary</div><div class="fp-sub" id="finsub">—</div></div>
+      <div style="display:flex;gap:6px" id="finpills"></div>
+    </div>
+    <div class="fingrid" id="fingrid"></div>
   </div>
 </div>
 
-<!-- ── STEP 3: 3D Facility ───────────────────────────────────────────────── -->
+<!-- ── STEP 3: 3D Facility ── -->
 <div class="step" id="step3">
-  <div id="three-canvas" style="width:100%;height:100%"></div>
+  <div id="map3" style="position:fixed;inset:52px 0 0 0;z-index:0;filter:brightness(0.3)"></div>
+  <div class="fp" id="fp-3d">
+    <div class="fp-hd">
+      <div class="fp-ico" style="background:rgba(245,158,11,0.15)">🏗️</div>
+      <div><div class="fp-title">Facility Layout</div><div class="fp-sub" id="fsub">3D visualization — drag to orbit</div></div>
+    </div>
+    <div id="tcwrap">
+      <canvas id="tcanvas"></canvas>
+      <div class="cvleg" id="cvleg"></div>
+      <div class="cvctrl">
+        <button class="cvbtn" onclick="resetCam()">⟳ Reset</button>
+        <button class="cvbtn" onclick="toggleWF()">◻ Wire</button>
+      </div>
+    </div>
+    <div class="fstats" id="fstats"></div>
+  </div>
+  <div class="fp" id="fp-fin3" style="bottom:14px;left:50%;transform:translateX(-50%);width:860px;max-width:calc(100vw - 28px);">
+    <div class="finhdr">
+      <div class="fp-ico" style="background:rgba(16,185,129,0.15)">📊</div>
+      <div style="flex:1"><div class="fp-title">Financial Summary</div><div class="fp-sub" id="finsub3">—</div></div>
+      <div style="display:flex;gap:6px" id="finpills3"></div>
+    </div>
+    <div class="fingrid" id="fingrid3"></div>
+  </div>
+  <div style="position:fixed;bottom:180px;right:14px;z-index:600;display:flex;flex-direction:column;gap:8px;">
+    <button class="btns" style="width:auto;padding:8px 16px" onclick="goStep(4)">View Full Financials →</button>
+    <button class="btns" style="width:auto;padding:8px 16px" onclick="goStep(2)">← Reconfigure</button>
+  </div>
 </div>
 
-<!-- ── STEP 4: Financials ────────────────────────────────────────────────── -->
+<!-- ── STEP 4: Financials ── -->
 <div class="step" id="step4">
-  <div class="step-inner">
-    <h2 style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:24px">FINANCIALS</h2>
-    <!-- Step 4 content preserved from Phase 1 simulator.html — insert here -->
-    <p style="color:var(--text2)">Step 4 financials UI — insert from existing simulator.html</p>
+  <div id="map4" style="position:fixed;inset:52px 0 0 0;z-index:0;filter:brightness(0.25)"></div>
+  <div style="position:fixed;inset:52px 0 0 0;z-index:500;overflow-y:auto;padding:24px;">
+    <div style="max-width:960px;margin:0 auto;">
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-1px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        FINANCIAL MODEL
+        <button class="btns" style="width:auto;padding:7px 16px;font-size:11px" onclick="goStep(3)">← Facility View</button>
+      </div>
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;" id="kpi-row"></div>
+      <!-- CAPEX + OPEX -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;">
+          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">CAPEX Breakdown</div>
+          <div id="capex-rows"></div>
+        </div>
+        <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;">
+          <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">Annual OPEX</div>
+          <div id="opex-rows"></div>
+        </div>
+      </div>
+      <!-- P&L -->
+      <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;margin-bottom:16px;">
+        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">P&L Summary</div>
+        <div id="pl-rows"></div>
+      </div>
+      <!-- 10yr projection -->
+      <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;">
+        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;">10-Year Net Income Projection</div>
+        <div id="chart-bars" style="display:flex;align-items:flex-end;gap:6px;height:120px;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
 </div><!-- /app -->
 
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
-const STATE = {
-  step: 1,
-  selectedLocation: null,
-  marketsData: null,
-  projectsData: null,
-  activeView: 'ranked',
-  pinDropMode: false,
-  showProjects: false,
-  showHeatmap: false,
+// ── State ──
+const S = {
+  step:1, loc:null, chip:null,
+  mw:100, density:30, util:.75, redun:2,
+  gpuPrice:2.5, coloRate:1500, revMix:'gpu',
+  marketsData:null, projectsData:null,
+  showProjects:false, showHeatmap:false, pinDropMode:false,
 };
 
-// ─── Hotspot base data (for map rendering before API loads) ──────────────────
-const HOTSPOTS = [
-  {id:'nva',name:'N. Virginia',    lat:38.9,   lng:-77.4},
-  {id:'sva',name:'Silicon Valley', lat:37.37,  lng:-121.97},
-  {id:'dal',name:'Dallas',         lat:32.78,  lng:-96.8},
-  {id:'phx',name:'Phoenix',        lat:33.43,  lng:-112.07},
-  {id:'chi',name:'Chicago',        lat:41.88,  lng:-87.63},
-  {id:'ore',name:'Oregon',         lat:45.52,  lng:-122.68},
-  {id:'sea',name:'Seattle',        lat:47.61,  lng:-122.33},
-  {id:'lon',name:'London',         lat:51.5,   lng:-0.12},
-  {id:'fra',name:'Frankfurt',      lat:50.11,  lng:8.68},
-  {id:'ams',name:'Amsterdam',      lat:52.37,  lng:4.9},
-  {id:'dub',name:'Dublin',         lat:53.33,  lng:-6.25},
-  {id:'par',name:'Paris',          lat:48.86,  lng:2.35},
-  {id:'zur',name:'Zurich',         lat:47.38,  lng:8.54},
-  {id:'sto',name:'Stockholm',      lat:59.33,  lng:18.07},
-  {id:'nor',name:'Norway',         lat:63.43,  lng:10.39},
-  {id:'sgp',name:'Singapore',      lat:1.35,   lng:103.82},
-  {id:'tok',name:'Tokyo',          lat:35.68,  lng:139.69},
-  {id:'osk',name:'Osaka',          lat:34.69,  lng:135.5},
-  {id:'dxb',name:'Dubai',          lat:25.2,   lng:55.27},
-  {id:'syd',name:'Sydney',         lat:-33.87, lng:151.2},
-  {id:'bom',name:'Mumbai',         lat:19.08,  lng:72.88},
-  {id:'mex',name:'Queretaro',      lat:20.59,  lng:-100.39},
-  {id:'scl',name:'Santiago',       lat:-33.45, lng:-70.67},
-  {id:'joh',name:'Johannesburg',   lat:-26.2,  lng:28.04},
-  {id:'sao',name:'Sao Paulo',      lat:-23.55, lng:-46.63},
+// ── Location data (from Phase 1) ──
+const BASE={
+  T1:{pc:.065,land:200000,build:10000000,tax:.21,pue:1.32,lab:1.1,ren:38,grid:99.97,conn:'Tier 1',perm:14},
+  T2:{pc:.075,land:80000, build:8000000, tax:.24,pue:1.45,lab:.80,ren:28,grid:99.9, conn:'Tier 2',perm:10},
+  T3:{pc:.09, land:40000, build:7000000, tax:.27,pue:1.60,lab:.50,ren:18,grid:99.5, conn:'Tier 3',perm:8},
+};
+const OV={
+  nva:{pc:.055,tax:.21,pue:1.35,ren:35,land:250000},ore:{pc:.038,tax:.17,pue:1.25,ren:72,land:80000},
+  dub:{pc:.095,tax:.125,pue:1.22,ren:55,land:500000},sgp:{pc:.12,tax:.17,pue:1.5,ren:5,land:2000000},
+  dxb:{pc:.04,tax:.09,pue:1.6,ren:10,land:600000},mex:{pc:.062,tax:.30,pue:1.4,ren:25,land:50000},
+  nor:{pc:.028,tax:.22,pue:1.15,ren:98,land:90000},bom:{pc:.07,tax:.25,pue:1.55,ren:20,land:40000},
+  zur:{pc:.10,tax:.145,pue:1.25,ren:65,land:800000},sto:{pc:.032,tax:.205,pue:1.18,ren:90,land:120000},
+  par:{pc:.09,tax:.25,pue:1.28,ren:50,land:450000},
+};
+
+const HOTSPOTS=[
+  {id:'nva',name:'N. Virginia',lat:38.9,lng:-77.4,tier:'T1'},{id:'sva',name:'Silicon Valley',lat:37.37,lng:-121.97,tier:'T1'},
+  {id:'dal',name:'Dallas',lat:32.78,lng:-96.8,tier:'T1'},{id:'phx',name:'Phoenix',lat:33.43,lng:-112.07,tier:'T1'},
+  {id:'chi',name:'Chicago',lat:41.88,lng:-87.63,tier:'T1'},{id:'ore',name:'Oregon',lat:45.52,lng:-122.68,tier:'T1'},
+  {id:'sea',name:'Seattle',lat:47.61,lng:-122.33,tier:'T1'},{id:'lon',name:'London',lat:51.5,lng:-0.12,tier:'T1'},
+  {id:'fra',name:'Frankfurt',lat:50.11,lng:8.68,tier:'T1'},{id:'ams',name:'Amsterdam',lat:52.37,lng:4.9,tier:'T1'},
+  {id:'dub',name:'Dublin',lat:53.33,lng:-6.25,tier:'T1'},{id:'par',name:'Paris',lat:48.86,lng:2.35,tier:'T1'},
+  {id:'zur',name:'Zurich',lat:47.38,lng:8.54,tier:'T1'},{id:'sto',name:'Stockholm',lat:59.33,lng:18.07,tier:'T2'},
+  {id:'nor',name:'Norway',lat:63.43,lng:10.39,tier:'T2'},{id:'sgp',name:'Singapore',lat:1.35,lng:103.82,tier:'T1'},
+  {id:'tok',name:'Tokyo',lat:35.68,lng:139.69,tier:'T1'},{id:'osk',name:'Osaka',lat:34.69,lng:135.5,tier:'T2'},
+  {id:'dxb',name:'Dubai',lat:25.2,lng:55.27,tier:'T2'},{id:'syd',name:'Sydney',lat:-33.87,lng:151.2,tier:'T2'},
+  {id:'bom',name:'Mumbai',lat:19.08,lng:72.88,tier:'T2'},{id:'mex',name:'Queretaro',lat:20.59,lng:-100.39,tier:'T2'},
+  {id:'scl',name:'Santiago',lat:-33.45,lng:-70.67,tier:'T2'},{id:'joh',name:'Johannesburg',lat:-26.2,lng:28.04,tier:'T3'},
+  {id:'sao',name:'Sao Paulo',lat:-23.55,lng:-46.63,tier:'T2'},
 ];
 
-// ─── Map init ─────────────────────────────────────────────────────────────────
-const map = L.map('map', {
-  center: [25, 15],
-  zoom: 3,
-  zoomControl: true,
-  attributionControl: true,
-  preferCanvas: true,
+const LOCS = HOTSPOTS.map(h=>{
+  const b=BASE[h.tier],o=OV[h.id]||{};
+  return{id:h.id,name:h.name,lat:h.lat,lng:h.lng,
+    powerCostKwh:o.pc||b.pc,landCostPerAcre:o.land||b.land,
+    constructionCostPerMW:b.build,taxRate:o.tax||b.tax,
+    pue:o.pue||b.pue,laborMult:b.lab,waterCostM3:3.5,
+    renewablesPct:o.ren||b.ren,gridReliability:b.grid,
+    permittingMonths:b.perm,connectivity:b.conn,tier:h.tier};
 });
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd',
-  maxZoom: 19,
-}).addTo(map);
+const CHIPS=[
+  {id:'h100',brand:'NVIDIA',name:'H100 SXM5',cost:30000,pwrKW:.70,tflops:3958,hbm:80,gpr:8,gen:'Hopper'},
+  {id:'b200',brand:'NVIDIA',name:'B200 SXM',cost:70000,pwrKW:1.2,tflops:9000,hbm:192,gpr:8,gen:'Blackwell'},
+  {id:'gb300',brand:'NVIDIA',name:'GB300 NVL72',cost:90000,pwrKW:1.4,tflops:11500,hbm:288,gpr:72,gen:'Blackwell'},
+  {id:'mi300',brand:'AMD',name:'MI300X',cost:15000,pwrKW:.75,tflops:5220,hbm:192,gpr:8,gen:'CDNA3'},
+  {id:'mi325',brand:'AMD',name:'MI325X',cost:18000,pwrKW:.80,tflops:6600,hbm:256,gpr:8,gen:'CDNA3+'},
+  {id:'tpu5',brand:'Google',name:'TPU v5p',cost:12000,pwrKW:.45,tflops:4594,hbm:95,gpr:16,gen:'v5'},
+  {id:'tr2',brand:'AWS',name:'Trainium 2',cost:10000,pwrKW:.60,tflops:3800,hbm:96,gpr:16,gen:'TR2'},
+  {id:'g3',brand:'Intel',name:'Gaudi 3',cost:8500,pwrKW:.90,tflops:5400,hbm:128,gpr:8,gen:'Gaudi'},
+  {id:'a100',brand:'NVIDIA',name:'A100 SXM4',cost:12000,pwrKW:.40,tflops:2496,hbm:80,gpr:8,gen:'Ampere'},
+  {id:'cpu',brand:'Intel',name:'Xeon CPU',cost:8000,pwrKW:.25,tflops:50,hbm:512,gpr:40,gen:'CPU'},
+];
+S.chip = CHIPS[0];
 
-// Layer groups
-const marketsLayer  = L.layerGroup().addTo(map);
+// ── Map (Step 1) ──
+let map, map2, map3, map4;
+const marketsLayer = L.layerGroup();
 const projectsLayer = L.layerGroup();
-const pinLayer      = L.layerGroup().addTo(map);
+const pinLayer = L.layerGroup();
 
-// ─── Custom marker SVGs ───────────────────────────────────────────────────────
-function marketIcon(score, tier) {
-  const colors = { hot:'#0fffa0', active:'#2d7ff9', watch:'#f5a623', cold:'#3e5272' };
-  const c = colors[tier] || colors.cold;
-  const size = tier === 'hot' ? 14 : tier === 'active' ? 12 : 10;
-  return L.divIcon({
-    className: '',
-    html: `<div style="position:relative;width:${size+8}px;height:${size+8}px">
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-        width:${size}px;height:${size}px;border-radius:50%;background:${c};
-        box-shadow:0 0 8px ${c}88;animation:mPulse 2.5s ease-in-out infinite;"></div>
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-        width:${size+8}px;height:${size+8}px;border-radius:50%;
-        border:1px solid ${c}44;animation:mRing 2.5s ease-in-out infinite;"></div>
-    </div>
-    <style>@keyframes mPulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.2)}}
-    @keyframes mRing{0%{transform:translate(-50%,-50%) scale(1);opacity:.5}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}</style>`,
-    iconSize: [size+8, size+8],
-    iconAnchor: [(size+8)/2, (size+8)/2],
-  });
+function initMap(){
+  map = L.map('map',{center:[25,15],zoom:3,zoomControl:true,attributionControl:true,preferCanvas:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; <a href="https://carto.com/">CARTO</a>',subdomains:'abcd',maxZoom:19
+  }).addTo(map);
+  marketsLayer.addTo(map);
+  pinLayer.addTo(map);
+  map.on('click', onMapClick);
 }
 
-function projectIcon(status) {
-  const colors = {
-    operational: '#0F6E56', under_construction: '#185FA5',
-    announced: '#7F77DD', cancelled: '#888780',
-  };
-  const c = colors[status] || colors.announced;
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:8px;height:8px;border-radius:50%;background:${c};
-      border:1px solid ${c}cc;box-shadow:0 0 4px ${c}66"></div>`,
-    iconSize: [8, 8],
-    iconAnchor: [4, 4],
+function initBgMaps(){
+  ['map2','map3','map4'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el||el._leaflet_id)return;
+    const m=L.map(id,{center:[25,15],zoom:3,zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false,doubleClickZoom:false,touchZoom:false});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(m);
+    if(id==='map2')map2=m; else if(id==='map3')map3=m; else map4=m;
   });
+  if(S.loc&&map2)map2.setView([S.loc.lat,S.loc.lng],8);
+  if(S.loc&&map3)map3.setView([S.loc.lat,S.loc.lng],8);
+  if(S.loc&&map4)map4.setView([S.loc.lat,S.loc.lng],8);
 }
 
-function pinIcon() {
-  return L.divIcon({
-    className: '',
-    html: `<div style="width:12px;height:12px;border-radius:50%;background:#f5a623;
-      border:2px solid #fff;box-shadow:0 0 8px #f5a62388;transform:translate(-50%,-50%)"></div>`,
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
-  });
+// Map marker helpers
+function marketIcon(score, tier){
+  const colors={hot:'#0fffa0',active:'#2d7ff9',watch:'#f5a623',cold:'#3e5272'};
+  const c=colors[tier]||colors.cold;
+  const size=tier==='hot'?14:tier==='active'?12:10;
+  return L.divIcon({className:'',
+    html:`<div style="position:relative;width:${size+8}px;height:${size+8}px">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:${size}px;height:${size}px;border-radius:50%;background:${c};box-shadow:0 0 8px ${c}88;"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:${size+8}px;height:${size+8}px;border-radius:50%;border:1px solid ${c}44;animation:mRing 2.5s ease-in-out infinite;"></div>
+    </div><style>@keyframes mRing{0%{transform:translate(-50%,-50%) scale(1);opacity:.5}100%{transform:translate(-50%,-50%) scale(2);opacity:0}}</style>`,
+    iconSize:[size+8,size+8],iconAnchor:[(size+8)/2,(size+8)/2]});
+}
+function projectIcon(status){
+  const colors={operational:'#0F6E56',under_construction:'#185FA5',announced:'#7F77DD',cancelled:'#888780'};
+  const c=colors[status]||colors.announced;
+  return L.divIcon({className:'',html:`<div style="width:8px;height:8px;border-radius:50%;background:${c};border:1px solid ${c}cc;"></div>`,iconSize:[8,8],iconAnchor:[4,4]});
+}
+function pinIcon(){
+  return L.divIcon({className:'',html:`<div style="width:12px;height:12px;border-radius:50%;background:#f5a623;border:2px solid #fff;box-shadow:0 0 8px #f5a62388;"></div>`,iconSize:[12,12],iconAnchor:[6,6]});
 }
 
-// ─── Render market markers ────────────────────────────────────────────────────
-function renderMarketMarkers() {
-  marketsLayer.clearLayers();
-  if (!STATE.marketsData) {
-    // Placeholder markers before data loads
-    HOTSPOTS.forEach(h => {
-      const marker = L.marker([h.lat, h.lng], {
-        icon: marketIcon(50, 'cold'),
-        zIndexOffset: 100,
-      }).addTo(marketsLayer);
-      marker.on('click', () => onMarketClick(h.id));
+function renderMarketMarkers(){
+  markersLayer && marketsLayer.clearLayers();
+  if(!S.marketsData){
+    HOTSPOTS.forEach(h=>{
+      const m=L.marker([h.lat,h.lng],{icon:marketIcon(50,'cold'),zIndexOffset:100}).addTo(marketsLayer);
+      m.on('click',()=>onHotspotClick(h.id));
     });
     return;
   }
-
-  STATE.marketsData.markets.forEach(m => {
-    const marker = L.marker([m.lat, m.lng], {
-      icon: marketIcon(m.score, m.tier),
-      zIndexOffset: 100 + m.score,
-    }).addTo(marketsLayer);
-    marker.on('click', () => showMarketCard(m));
+  S.marketsData.markets.forEach(m=>{
+    const marker=L.marker([m.lat,m.lng],{icon:marketIcon(m.score,m.tier),zIndexOffset:100+m.score}).addTo(marketsLayer);
+    marker.on('click',()=>showMarketCard(m));
   });
 }
+// alias fix
+const markersLayer = true;
 
-// ─── Render project markers ───────────────────────────────────────────────────
-function renderProjectMarkers() {
+function renderProjectMarkers(){
   projectsLayer.clearLayers();
-  if (!STATE.projectsData) return;
-
-  const legend = document.getElementById('pipeline-legend');
-  legend.classList.toggle('visible', STATE.showProjects);
-
-  STATE.projectsData.features.forEach(f => {
-    const p = f.properties;
-    const [lng, lat] = f.geometry.coordinates;
-    const marker = L.marker([lat, lng], {
-      icon: projectIcon(p.status),
-      zIndexOffset: 50,
-    }).addTo(projectsLayer);
-    marker.on('click', () => showProjectCard(p, lat, lng));
+  if(!S.projectsData)return;
+  S.projectsData.features.forEach(f=>{
+    const p=f.properties;
+    const [lng,lat]=f.geometry.coordinates;
+    const marker=L.marker([lat,lng],{icon:projectIcon(p.status),zIndexOffset:50}).addTo(projectsLayer);
+    marker.on('click',()=>showProjectCard(p,lat,lng));
   });
 }
 
-// ─── Show market score card ───────────────────────────────────────────────────
-function showMarketCard(market) {
-  const card = document.getElementById('score-card');
+function onMapClick(e){
+  if(S.pinDropMode){
+    dropPin(e.latlng.lat,e.latlng.lng);
+    return;
+  }
+  // Check proximity to known hotspot
+  let closest=null,minDist=Infinity;
+  HOTSPOTS.forEach(h=>{
+    const d=map.distance([h.lat,h.lng],[e.latlng.lat,e.latlng.lng]);
+    if(d<80000&&d<minDist){minDist=d;closest=h;}
+  });
+  if(closest) onHotspotClick(closest.id);
+  else dropPin(e.latlng.lat,e.latlng.lng);
+}
 
-  document.getElementById('sc-name').textContent = market.name;
-  document.getElementById('sc-meta').textContent =
-    `${market.country} · ${market.tier} market · Rank #${market.rank}`;
-  document.getElementById('sc-score').textContent = market.score;
+function onHotspotClick(id){
+  if(S.marketsData){
+    const m=S.marketsData.markets.find(m=>m.id===id);
+    if(m){showMarketCard(m);return;}
+  }
+  // Fallback: build card from LOCS
+  const loc=LOCS.find(l=>l.id===id);
+  if(!loc)return;
+  S.loc=loc;
+  document.getElementById('sc-name').textContent=loc.name;
+  document.getElementById('sc-meta').textContent=`${loc.tier} · $${loc.powerCostKwh.toFixed(3)}/kWh`;
+  document.getElementById('sc-score').textContent='—';
+  document.getElementById('sc-tier').textContent='Known market';
+  document.getElementById('sc-tier').className='sc-tier-pill tier-active';
+  document.getElementById('sc-ci').textContent='Baseline data';
+  document.getElementById('sc-bars').innerHTML='';
+  document.getElementById('sc-signal-rows').innerHTML=`
+    <div class="sig-row"><span class="sig-label">Power cost</span><span class="sig-val">$${loc.powerCostKwh.toFixed(3)}/kWh</span></div>
+    <div class="sig-row"><span class="sig-label">PUE</span><span class="sig-val">${loc.pue}</span></div>
+    <div class="sig-row"><span class="sig-label">Renewables</span><span class="sig-val">${loc.renewablesPct}%</span></div>
+    <div class="sig-row"><span class="sig-label">Corp tax</span><span class="sig-val">${(loc.taxRate*100).toFixed(1)}%</span></div>`;
+  document.getElementById('sc-projects').style.display='none';
+  document.getElementById('score-card').classList.add('visible');
+  map.panTo([loc.lat,loc.lng],{animate:true,duration:.5});
+}
 
-  const tierLabels = { hot:'Hot Market', active:'Active Market', watch:'Watch List', cold:'Low Opportunity' };
-  const tierEl = document.getElementById('sc-tier');
-  tierEl.textContent = tierLabels[market.tier] || market.tier;
-  tierEl.className = `sc-tier-pill tier-${market.tier}`;
+function showMarketCard(market){
+  // Set S.loc from market data
+  const loc=LOCS.find(l=>l.id===market.id);
+  if(loc) S.loc=loc;
 
-  document.getElementById('sc-ci').textContent = 'High confidence · known market';
+  document.getElementById('sc-name').textContent=market.name;
+  document.getElementById('sc-meta').textContent=`${market.country} · Rank #${market.rank}`;
+  document.getElementById('sc-score').textContent=market.score;
+  const tierLabels={hot:'Hot Market',active:'Active Market',watch:'Watch List',cold:'Low Opportunity'};
+  const tierEl=document.getElementById('sc-tier');
+  tierEl.textContent=tierLabels[market.tier]||market.tier;
+  tierEl.className=`sc-tier-pill tier-${market.tier}`;
+  document.getElementById('sc-ci').textContent='High confidence · known market';
 
-  // Score breakdown bars
-  const bd = market.breakdown;
-  const bars = [
-    { name: 'Power cost',    val: bd.power.score,        raw: bd.power.value,        live: bd.power.live },
-    { name: 'Demand',        val: bd.demand.score,       raw: bd.demand.value },
-    { name: 'Connectivity',  val: bd.connectivity.score, raw: bd.connectivity.value },
-    { name: 'Permitting',    val: bd.permitting.score,   raw: bd.permitting.value },
-    { name: 'Political risk',val: bd.political.score,    raw: bd.political.value },
+  const bd=market.breakdown;
+  const bars=[
+    {name:'Power cost',val:bd.power.score,raw:bd.power.value,live:bd.power.live},
+    {name:'Demand',val:bd.demand.score,raw:bd.demand.value},
+    {name:'Connectivity',val:bd.connectivity.score,raw:bd.connectivity.value},
+    {name:'Permitting',val:bd.permitting.score,raw:bd.permitting.value},
+    {name:'Political risk',val:bd.political.score,raw:bd.political.value},
   ];
-
-  document.getElementById('sc-bars').innerHTML = bars.map(b => `
+  document.getElementById('sc-bars').innerHTML=bars.map(b=>`
     <div class="score-bar-row">
       <div class="sbr-label">
-        <span class="sbr-name">${b.name}${b.live ? ' <span style="color:#0fffa0;font-size:9px">● LIVE</span>' : ''}</span>
+        <span class="sbr-name">${b.name}${b.live?' <span style="color:#0fffa0;font-size:9px">● LIVE</span>':''}</span>
         <span class="sbr-val">${b.raw}</span>
       </div>
-      <div class="sbr-track">
-        <div class="sbr-fill" style="width:${b.val}%;background:${scoreColor(b.val)}"></div>
-      </div>
+      <div class="sbr-track"><div class="sbr-fill" style="width:${b.val}%;background:${scoreColor(b.val)}"></div></div>
     </div>`).join('');
 
-  // Highlights as signals
-  document.getElementById('sc-signal-rows').innerHTML = (market.intel?.highlights || market.highlights || [])
-    .map(h => `<div class="sig-row"><span class="sig-label">${h}</span></div>`).join('');
+  document.getElementById('sc-signal-rows').innerHTML=(market.intel?.highlights||market.highlights||[])
+    .map(h=>`<div class="sig-row"><span class="sig-label">${h}</span></div>`).join('');
 
-  // Nearby projects
-  showNearbyProjects(market.lat, market.lng);
-
-  // Highlight in list
-  document.querySelectorAll('.market-item').forEach(el => el.classList.remove('selected'));
-  const listItem = document.querySelector(`[data-id="${market.id}"]`);
-  if (listItem) {
-    listItem.classList.add('selected');
-    listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  // Pan map
-  map.panTo([market.lat, market.lng], { animate: true, duration: 0.5 });
-
-  card.classList.add('visible');
-  STATE.selectedLocation = market;
-}
-
-function showProjectCard(proj, lat, lng) {
-  document.getElementById('sc-name').textContent = proj.name;
-  document.getElementById('sc-meta').textContent =
-    `${proj.operator || 'Unknown operator'} · ${proj.mw ? proj.mw + ' MW' : 'MW unknown'}`;
-  document.getElementById('sc-score').textContent = '—';
-
-  const tierEl = document.getElementById('sc-tier');
-  const statusLabels = {
-    operational: 'Operational', under_construction: 'Under Construction',
-    announced: 'Announced', cancelled: 'Cancelled / Hold',
-  };
-  const statusColors = {
-    operational: 'tier-hot', under_construction: 'tier-active',
-    announced: 'tier-watch', cancelled: 'tier-cold',
-  };
-  tierEl.textContent = statusLabels[proj.status] || proj.status;
-  tierEl.className = `sc-tier-pill ${statusColors[proj.status] || 'tier-cold'}`;
-  document.getElementById('sc-ci').textContent = `Source: ${proj.source} · ${proj.confidence} confidence`;
-
-  document.getElementById('sc-bars').innerHTML = '';
-  document.getElementById('sc-signal-rows').innerHTML = `
-    <div class="sig-row"><span class="sig-label">Operator</span><span class="sig-val">${proj.operator || '—'}</span></div>
-    <div class="sig-row"><span class="sig-label">Capacity</span><span class="sig-val">${proj.mw ? proj.mw + ' MW' : '—'}</span></div>
-    <div class="sig-row"><span class="sig-label">Announced</span><span class="sig-val">${proj.announced_date ? proj.announced_date.slice(0,7) : '—'}</span></div>
-    ${proj.source_url ? `<div class="sig-row"><span class="sig-label" style="cursor:pointer;color:var(--accent)" onclick="window.open('${proj.source_url}','_blank')">View source ↗</span></div>` : ''}
-  `;
-
-  document.getElementById('sc-projects').style.display = 'none';
+  showNearbyProjects(market.lat,market.lng);
+  showGridPanel(market.id);.forEach(el=>el.classList.remove('selected'));
+  const li=document.querySelector(`[data-id="${market.id}"]`);
+  if(li){li.classList.add('selected');li.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  map.panTo([market.lat,market.lng],{animate:true,duration:.5});
   document.getElementById('score-card').classList.add('visible');
 }
 
-// ─── Pin drop ─────────────────────────────────────────────────────────────────
-let currentPin = null;
-
-function startPinDrop() {
-  STATE.pinDropMode = !STATE.pinDropMode;
-  const btn = document.getElementById('ctrl-pin');
-  if (STATE.pinDropMode) {
-    btn.classList.add('active');
-    btn.textContent = '✕ Cancel';
-    map.getContainer().style.cursor = 'crosshair';
-  } else {
-    btn.classList.remove('active');
-    btn.textContent = '+ Drop Pin';
-    map.getContainer().style.cursor = '';
-  }
+function showProjectCard(proj,lat,lng){
+  document.getElementById('sc-name').textContent=proj.name;
+  document.getElementById('sc-meta').textContent=`${proj.operator||'Unknown'} · ${proj.mw?proj.mw+' MW':'MW unknown'}`;
+  document.getElementById('sc-score').textContent='—';
+  const statusColors={operational:'tier-hot',under_construction:'tier-active',announced:'tier-watch',cancelled:'tier-cold'};
+  const statusLabels={operational:'Operational',under_construction:'Under Construction',announced:'Announced',cancelled:'Cancelled'};
+  const tierEl=document.getElementById('sc-tier');
+  tierEl.textContent=statusLabels[proj.status]||proj.status;
+  tierEl.className=`sc-tier-pill ${statusColors[proj.status]||'tier-cold'}`;
+  document.getElementById('sc-ci').textContent=`Source: ${proj.source} · ${proj.confidence} confidence`;
+  document.getElementById('sc-bars').innerHTML='';
+  document.getElementById('sc-signal-rows').innerHTML=`
+    <div class="sig-row"><span class="sig-label">Operator</span><span class="sig-val">${proj.operator||'—'}</span></div>
+    <div class="sig-row"><span class="sig-label">Capacity</span><span class="sig-val">${proj.mw?proj.mw+' MW':'—'}</span></div>
+    <div class="sig-row"><span class="sig-label">Announced</span><span class="sig-val">${proj.announced_date?proj.announced_date.slice(0,7):'—'}</span></div>`;
+  document.getElementById('sc-projects').style.display='none';
+  document.getElementById('score-card').classList.add('visible');
 }
 
-map.on('click', async (e) => {
-  if (!STATE.pinDropMode) return;
+// Pin drop
+let currentPin=null;
+function startPinDrop(){
+  S.pinDropMode=!S.pinDropMode;
+  const btn=document.getElementById('ctrl-pin');
+  btn.classList.toggle('active',S.pinDropMode);
+  btn.textContent=S.pinDropMode?'✕ Cancel':'+ Drop Pin';
+  map.getContainer().style.cursor=S.pinDropMode?'crosshair':'';
+}
 
-  const { lat, lng } = e.latlng;
+async function dropPin(lat,lng){
+  S.pinDropMode=false;
+  document.getElementById('ctrl-pin').classList.remove('active');
+  document.getElementById('ctrl-pin').textContent='+ Drop Pin';
+  map.getContainer().style.cursor='';
 
-  // Drop pin immediately
   pinLayer.clearLayers();
-  currentPin = L.marker([lat, lng], { icon: pinIcon() }).addTo(pinLayer);
+  L.marker([lat,lng],{icon:pinIcon()}).addTo(pinLayer);
 
-  // Show loading card instantly
-  document.getElementById('sc-name').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  document.getElementById('sc-meta').textContent = 'Resolving location...';
-  document.getElementById('sc-score').textContent = '…';
-  document.getElementById('sc-tier').textContent = 'Loading';
-  document.getElementById('sc-tier').className = 'sc-tier-pill tier-cold';
-  document.getElementById('sc-ci').textContent = 'Fetching live signals...';
-  document.getElementById('sc-bars').innerHTML = `
-    <div style="padding:12px 16px">
-      <div class="skeleton" style="height:12px;width:80%;margin-bottom:8px"></div>
-      <div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div>
-      <div class="skeleton" style="height:12px;width:70%"></div>
-    </div>`;
-  document.getElementById('sc-signal-rows').innerHTML = '';
+  document.getElementById('sc-name').textContent=`${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  document.getElementById('sc-meta').textContent='Resolving location...';
+  document.getElementById('sc-score').textContent='…';
+  document.getElementById('sc-tier').textContent='Loading';
+  document.getElementById('sc-tier').className='sc-tier-pill tier-cold';
+  document.getElementById('sc-ci').textContent='Fetching signals...';
+  document.getElementById('sc-bars').innerHTML=`<div style="padding:10px 14px"><div class="skeleton" style="height:10px;width:80%;margin-bottom:7px"></div><div class="skeleton" style="height:10px;width:60%"></div></div>`;
+  document.getElementById('sc-signal-rows').innerHTML='';
   document.getElementById('score-card').classList.add('visible');
 
-  // Exit pin mode
-  startPinDrop();
-
-  // Fetch from API
-  try {
-    const r = await fetch(`/api/locate?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}`);
-    if (!r.ok) throw new Error('API error');
-    const data = await r.json();
-    renderPinCard(data, lat, lng);
-  } catch (err) {
-    document.getElementById('sc-meta').textContent = 'Error resolving location — try again';
-    document.getElementById('sc-score').textContent = '?';
-    document.getElementById('sc-bars').innerHTML = '';
+  try{
+    const r=await fetch(`/api/locate?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}`);
+    if(!r.ok)throw new Error();
+    const data=await r.json();
+    renderPinCardWithGrid(data,lat,lng);
+  }catch{
+    document.getElementById('sc-meta').textContent='Error resolving — try again';
+    document.getElementById('sc-bars').innerHTML='';
   }
-});
+}
 
-function renderPinCard(data, lat, lng) {
-  document.getElementById('sc-name').textContent =
-    `Custom: ${lat.toFixed(3)}, ${lng.toFixed(3)}`;
-  document.getElementById('sc-meta').textContent =
-    `${data.countryCode} · ${data.nearestHotspot.distKm}km from ${data.nearestHotspot.name}`;
-  document.getElementById('sc-score').textContent = data.overallScore;
-
-  const tierEl = document.getElementById('sc-tier');
-  tierEl.textContent = data.scoreTierLabel.label;
-  tierEl.className = `sc-tier-pill tier-${data.scoreTier}`;
-
-  const ciSource = data.powerCost.isLive ? 'Live EIA power price' : 'Interpolated';
-  document.getElementById('sc-ci').textContent =
-    `±${data.confidenceInterval}% confidence · ${ciSource}`;
-
-  // Score bars
-  document.getElementById('sc-bars').innerHTML = data.signals.map(s => `
+function renderPinCard(data,lat,lng){
+  // Build a synthetic loc for financial model
+  S.loc={
+    id:'custom',name:`Custom (${lat.toFixed(2)},${lng.toFixed(2)})`,lat,lng,
+    powerCostKwh:data.powerCost.value,landCostPerAcre:80000,
+    constructionCostPerMW:9000000,taxRate:(100-data.politicalRisk.score)/400+0.15,
+    pue:1.4,laborMult:0.8,waterCostM3:3.5,renewablesPct:30,
+    gridReliability:99.5,permittingMonths:12,connectivity:data.connectivity.label,tier:'T2'
+  };
+  document.getElementById('sc-name').textContent=`${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+  document.getElementById('sc-meta').textContent=`${data.countryCode} · ${data.nearestHotspot.distKm}km from ${data.nearestHotspot.name}`;
+  document.getElementById('sc-score').textContent=data.overallScore;
+  const tierEl=document.getElementById('sc-tier');
+  tierEl.textContent=data.scoreTierLabel.label;
+  tierEl.className=`sc-tier-pill tier-${data.scoreTier}`;
+  document.getElementById('sc-ci').textContent=`±${data.confidenceInterval}% confidence`;
+  document.getElementById('sc-bars').innerHTML=data.signals.map(s=>`
     <div class="score-bar-row">
       <div class="sbr-label">
-        <span class="sbr-name">${s.label}
-          ${s.source === 'EIA live' ? '<span style="color:#0fffa0;font-size:9px"> ● LIVE</span>' : ''}
-        </span>
+        <span class="sbr-name">${s.label}${s.source==='EIA live'?' <span style="color:#0fffa0;font-size:9px">● LIVE</span>':''}</span>
         <span class="sbr-val">${s.value}</span>
       </div>
-      <div class="sbr-track">
-        <div class="sbr-fill" style="width:${s.score}%;background:${scoreColor(s.score)}"></div>
-      </div>
+      <div class="sbr-track"><div class="sbr-fill" style="width:${s.score}%;background:${scoreColor(s.score)}"></div></div>
     </div>`).join('');
-
-  // Signal detail rows
-  document.getElementById('sc-signal-rows').innerHTML = data.signals.map(s => `
-    <div class="sig-row">
-      <div>
-        <div class="sig-label">${s.label}</div>
-        <div class="sig-src">${s.note}</div>
-      </div>
-      <span class="sig-val">${s.value}</span>
-    </div>`).join('');
-
-  showNearbyProjects(lat, lng);
-
-  STATE.selectedLocation = {
-    lat, lng,
-    name: `Custom location (${lat.toFixed(3)}, ${lng.toFixed(3)})`,
-    isCustom: true,
-    locateData: data,
-  };
+  document.getElementById('sc-signal-rows').innerHTML=data.signals.map(s=>`
+    <div class="sig-row"><div><div class="sig-label">${s.label}</div><div style="font-size:9px;color:var(--text3)">${s.note}</div></div><span class="sig-val">${s.value}</span></div>`).join('');
+  showNearbyProjects(lat,lng);
+  showGridPanel({ lat, lng, country: data.countryCode });
 }
 
-// ─── Nearby projects ──────────────────────────────────────────────────────────
-function showNearbyProjects(lat, lng) {
-  if (!STATE.projectsData?.features?.length) {
-    document.getElementById('sc-projects').style.display = 'none';
-    return;
-  }
-
-  function dist(a, b) {
-    const R = 6371;
-    const dLat = (b[0]-a[0])*Math.PI/180;
-    const dLng = (b[1]-a[1])*Math.PI/180;
-    const aa = Math.sin(dLat/2)**2 + Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLng/2)**2;
-    return R*2*Math.atan2(Math.sqrt(aa),Math.sqrt(1-aa));
-  }
-
-  const nearby = STATE.projectsData.features
-    .filter(f => dist([lat,lng], [f.geometry.coordinates[1], f.geometry.coordinates[0]]) < 200)
-    .sort((a,b) => dist([lat,lng],[a.geometry.coordinates[1],a.geometry.coordinates[0]])
-                 - dist([lat,lng],[b.geometry.coordinates[1],b.geometry.coordinates[0]]))
-    .slice(0, 5);
-
-  if (!nearby.length) {
-    document.getElementById('sc-projects').style.display = 'none';
-    return;
-  }
-
-  const statusLabels = { operational:'Operational', under_construction:'Building', announced:'Announced', cancelled:'Cancelled' };
-  document.getElementById('sc-project-list').innerHTML = nearby.map(f => {
-    const p = f.properties;
-    const d = Math.round(dist([lat,lng],[f.geometry.coordinates[1],f.geometry.coordinates[0]]));
-    return `<div class="sps-item">
-      <span style="color:var(--text)">${p.name}</span>
-      <span style="color:var(--text3)"> · ${p.mw ? p.mw+'MW' : '?MW'} · ${statusLabels[p.status] || p.status} · ${d}km</span>
-    </div>`;
+function showNearbyProjects(lat,lng){
+  if(!S.projectsData?.features?.length){document.getElementById('sc-projects').style.display='none';return;}
+  function dist(a,b){const R=6371,dLat=(b[0]-a[0])*Math.PI/180,dLng=(b[1]-a[1])*Math.PI/180;
+    const aa=Math.sin(dLat/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(aa),Math.sqrt(1-aa));}
+  const nearby=S.projectsData.features
+    .filter(f=>dist([lat,lng],[f.geometry.coordinates[1],f.geometry.coordinates[0]])<200)
+    .sort((a,b)=>dist([lat,lng],[a.geometry.coordinates[1],a.geometry.coordinates[0]])-dist([lat,lng],[b.geometry.coordinates[1],b.geometry.coordinates[0]]))
+    .slice(0,4);
+  if(!nearby.length){document.getElementById('sc-projects').style.display='none';return;}
+  const sl={operational:'Ops',under_construction:'Building',announced:'Announced',cancelled:'Cancelled'};
+  document.getElementById('sc-project-list').innerHTML=nearby.map(f=>{
+    const p=f.properties;
+    const d=Math.round(dist([lat,lng],[f.geometry.coordinates[1],f.geometry.coordinates[0]]));
+    return `<div class="sps-item"><span style="color:var(--text)">${p.name}</span> <span style="color:var(--text3)">· ${p.mw?p.mw+'MW':'?MW'} · ${sl[p.status]||p.status} · ${d}km</span></div>`;
   }).join('');
-
-  document.getElementById('sc-projects').style.display = 'block';
+  document.getElementById('sc-projects').style.display='block';
 }
 
-// ─── Market list rendering ────────────────────────────────────────────────────
-function renderMarketList() {
-  if (!STATE.marketsData) return;
-  const { markets } = STATE.marketsData;
-
-  document.getElementById('market-skeleton').style.display = 'none';
-  const list = document.getElementById('market-items');
-  list.style.display = 'block';
-
-  list.innerHTML = markets.map(m => `
-    <div class="market-item" data-id="${m.id}" onclick="showMarketCard(${JSON.stringify(m).replace(/"/g,"'")})">
+// Market list
+function renderMarketList(){
+  if(!S.marketsData)return;
+  document.getElementById('market-skeleton').style.display='none';
+  const list=document.getElementById('market-items');
+  list.style.display='block';
+  list.innerHTML=S.marketsData.markets.map(m=>`
+    <div class="market-item" data-id="${m.id}" onclick='showMarketCardWithGrid(${JSON.stringify(m)})'>
       <div class="mi-top">
         <span class="mi-rank">#${m.rank}</span>
         <span class="mi-name">${m.name}</span>
         <span class="mi-score tier-${m.tier}">${m.score}</span>
       </div>
       <div class="mi-bottom">
-        <span class="mi-tag">$${(m.breakdown.power.value||'').replace('$','').replace('/kWh','')}/kWh</span>
-        <span class="mi-tag">${m.intel?.saturation || '—'} sat</span>
-        <span class="mi-tag">${m.intel?.gridMw ? m.intel.gridMw+'MW grid' : ''}</span>
+        <span class="mi-tag">${m.breakdown?.power?.value||'—'}</span>
+        <span class="mi-tag">${m.intel?.saturation||'—'} sat</span>
       </div>
     </div>`).join('');
 }
 
-// ─── Panel view toggle ────────────────────────────────────────────────────────
-function setView(view) {
-  STATE.activeView = view;
-  ['ranked','pipeline','heatmap'].forEach(v => {
-    document.getElementById(`vtab-${v}`)?.classList.toggle('active', v === view);
-  });
+function setView(view){
+  ['ranked','pipeline','heatmap'].forEach(v=>document.getElementById(`vtab-${v}`)?.classList.toggle('active',v===view));
+  if(view==='pipeline'){S.showProjects=true;if(!map.hasLayer(projectsLayer))projectsLayer.addTo(map);document.getElementById('pipeline-legend').classList.add('visible');}
+  if(view==='heatmap')toggleHeatmap();
+}
 
-  if (view === 'pipeline') {
-    toggleMarkers('projects');
-    document.getElementById('market-items').style.display = 'none';
-    // Could render pipeline list here
-  } else if (view === 'heatmap') {
-    toggleHeatmap();
-  } else {
-    document.getElementById('market-items').style.display = 'block';
+function toggleMarkers(type){
+  if(type==='projects'){
+    S.showProjects=!S.showProjects;
+    document.getElementById('ctrl-projects').classList.toggle('active',S.showProjects);
+    if(S.showProjects){projectsLayer.addTo(map);document.getElementById('pipeline-legend').classList.add('visible');}
+    else{map.removeLayer(projectsLayer);document.getElementById('pipeline-legend').classList.remove('visible');}
   }
 }
 
-function toggleMarkers(type) {
-  if (type === 'projects') {
-    STATE.showProjects = !STATE.showProjects;
-    const btn = document.getElementById('ctrl-projects');
-    btn.classList.toggle('active', STATE.showProjects);
-    if (STATE.showProjects) {
-      projectsLayer.addTo(map);
-      document.getElementById('pipeline-legend').classList.add('visible');
-    } else {
-      map.removeLayer(projectsLayer);
-      document.getElementById('pipeline-legend').classList.remove('visible');
-    }
-  }
-}
-
-function toggleHeatmap() {
-  STATE.showHeatmap = !STATE.showHeatmap;
-  document.getElementById('ctrl-heatmap').classList.toggle('active', STATE.showHeatmap);
-  // Heatmap implementation — render canvas overlay from market scores
-  // For now: visual feedback only, full heatmap can use leaflet-heat plugin
-  if (STATE.showHeatmap && STATE.marketsData) {
-    STATE.marketsData.markets.forEach(m => {
-      const radius = m.score * 0.8;
-      L.circle([m.lat, m.lng], {
-        radius: radius * 1000,
-        color: scoreTierColor(m.tier),
-        fillColor: scoreTierColor(m.tier),
-        fillOpacity: 0.06,
-        weight: 0,
-        className: 'heatmap-circle',
-      }).addTo(marketsLayer);
+function toggleHeatmap(){
+  S.showHeatmap=!S.showHeatmap;
+  document.getElementById('ctrl-heatmap').classList.toggle('active',S.showHeatmap);
+  if(S.showHeatmap&&S.marketsData){
+    S.marketsData.markets.forEach(m=>{
+      L.circle([m.lat,m.lng],{radius:m.score*1000,color:scoreTierColor(m.tier),fillColor:scoreTierColor(m.tier),fillOpacity:0.07,weight:0}).addTo(marketsLayer);
     });
   }
 }
 
-function scoreTierColor(tier) {
-  return { hot:'#0fffa0', active:'#2d7ff9', watch:'#f5a623', cold:'#3e5272' }[tier] || '#3e5272';
-}
-
-function scoreColor(score) {
-  if (score >= 75) return '#0fffa0';
-  if (score >= 55) return '#2d7ff9';
-  if (score >= 35) return '#f5a623';
-  return '#3e5272';
-}
-
-function closeCard() {
+function closeCard(){
   document.getElementById('score-card').classList.remove('visible');
-  document.querySelectorAll('.market-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.market-item').forEach(el=>el.classList.remove('selected'));
 }
 
-function selectLocation() {
-  if (!STATE.selectedLocation) return;
+function selectLocation(){
+  if(!S.loc)return;
   goStep(2);
 }
 
-// ─── Step navigation ──────────────────────────────────────────────────────────
-function goStep(n) {
-  STATE.step = n;
-  document.querySelectorAll('.step').forEach((el,i) => {
-    el.classList.toggle('active', i+1 === n);
+function scoreColor(s){return s>=75?'#0fffa0':s>=55?'#2d7ff9':s>=35?'#f5a623':'#3e5272';}
+function scoreTierColor(t){return{hot:'#0fffa0',active:'#2d7ff9',watch:'#f5a623',cold:'#3e5272'}[t]||'#3e5272';}
+
+// ── Chip grid ──
+function initChipGrid(){
+  document.getElementById('cgrid').innerHTML=CHIPS.map(c=>`
+    <div class="cc ${c.id===S.chip.id?'sel':''}" onclick="selChip('${c.id}')">
+      <div class="cbrand">${c.brand}</div>
+      <div class="cname">${c.name}</div>
+      <div class="cspec">$<span>${(c.cost/1000).toFixed(0)}K</span>/unit</div>
+      <div class="cspec"><span>${(c.tflops/1000).toFixed(1)}</span> PF · <span>${c.pwrKW}</span> kW</div>
+    </div>`).join('');
+}
+function selChip(id){S.chip=CHIPS.find(c=>c.id===id);initChipGrid();recalc();}
+
+// ── Sliders ──
+function sl(el,vid,fmt2,key){
+  document.getElementById(vid).textContent=fmt2(el.value);
+  el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
+  if(key==='mw')S.mw=+el.value;
+  else if(key==='density')S.density=+el.value;
+  else if(key==='util')S.util=+el.value/100;
+  else if(key==='gpuPrice')S.gpuPrice=+el.value;
+  else if(key==='coloRate')S.coloRate=+el.value;
+  recalc();
+}
+function slred(el){
+  document.getElementById('vred').textContent={1:'N+1',2:'2N',3:'2N+1'}[el.value];
+  el.style.setProperty('--pct',((el.value-1)/2*100)+'%');
+  S.redun=+el.value;recalc();
+}
+function initSliders(){
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    el.style.setProperty('--pct',((el.value-el.min)/(el.max-el.min)*100)+'%');
   });
-  document.querySelectorAll('.step-pill').forEach((el,i) => {
+}
+function ctab(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tp-'+tab).classList.add('active');
+}
+
+// ── Financial model ──
+function calcF(){
+  const loc=S.loc;if(!loc)return null;
+  const{chip,mw,util,redun,gpuPrice,coloRate,revMix}=S;
+  const totalKW=mw*1000,facKW=totalKW*loc.pue;
+  const nChips=Math.floor(totalKW/chip.pwrKW);
+  const nRacks=Math.ceil(nChips/chip.gpr);
+  const acres=Math.max(1,Math.ceil(mw*.5+nRacks*.008));
+  const rdm={1:1.15,2:1.30,3:1.45}[redun];
+  const cChip=nChips*chip.cost;
+  const cBuild=mw*loc.constructionCostPerMW*loc.laborMult*rdm;
+  const cLand=acres*loc.landCostPerAcre;
+  const cPwr=mw*1600000*rdm;
+  const cCool=mw*900000;
+  const cNet=nRacks*18000;
+  const cMisc=(cBuild+cChip)*.08;
+  const capex=cChip+cBuild+cLand+cPwr+cCool+cNet+cMisc;
+  const oPwr=facKW*8760*loc.powerCostKwh;
+  const oLab=nRacks*600*loc.laborMult;
+  const oWat=mw*1200*loc.waterCostM3;
+  const oNet=nRacks*2200;
+  const oMnt=capex*.025;
+  const oIns=capex*.008;
+  const opex=oPwr+oLab+oWat+oNet+oMnt+oIns;
+  const gRev=nChips*8760*util*gpuPrice;
+  const cRev=nRacks*coloRate*12;
+  const rev=revMix==='gpu'?gRev:revMix==='colo'?cRev:gRev*.6+cRev*.4;
+  const ebitda=rev-opex,depr=capex/7,ebit=ebitda-depr;
+  const tax=Math.max(0,ebit*loc.taxRate),ni=ebit-tax;
+  const roi=capex>0?(ni/capex)*100:0;
+  const pb=ni>0?capex/ni:null;
+  const margin=rev>0?ebitda/rev*100:0;
+  return{nChips,nRacks,acres,capex,opex,rev,ebitda,ni,roi,pb,margin,mw,
+    cChip,cBuild,cLand,cPwr,cCool,cNet,cMisc,
+    oPwr,oLab,oWat,oNet,oMnt,oIns,
+    yr5:Math.max(0,ni*5-capex),yr10:Math.max(0,ni*10-capex)};
+}
+
+function fmt(n){
+  if(n===null||isNaN(n))return'—';
+  const a=Math.abs(n),s=n<0?'-':'';
+  if(a>=1e9)return s+'$'+(a/1e9).toFixed(2)+'B';
+  if(a>=1e6)return s+'$'+(a/1e6).toFixed(1)+'M';
+  if(a>=1e3)return s+'$'+(a/1e3).toFixed(0)+'K';
+  return s+'$'+a.toFixed(0);
+}
+function fmtN(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':n.toLocaleString();}
+
+function recalc(){
+  const f=calcF();if(!f)return;
+  // Update all finance panels
+  updateFinancePanels(f);
+  updateTopbar(f);
+  if(S.step>=3)renderFacStats(f);
+}
+
+function updateFinancePanels(f){
+  const p=f.ni>0;
+  const rc=f.roi>15?'var(--green)':f.roi>5?'var(--accent)':f.roi>0?'var(--amber)':'var(--red)';
+  const grid=`
+    <div class="fm"><div class="fml">Total CAPEX</div><div class="fmv" style="color:var(--amber)">${fmt(f.capex)}</div><div class="fms">${fmt(f.capex/f.mw)}/MW</div></div>
+    <div class="fm"><div class="fml">Annual Revenue</div><div class="fmv" style="color:var(--green)">${fmt(f.rev)}</div><div class="fms">${fmt(f.rev/12)}/mo</div></div>
+    <div class="fm"><div class="fml">Net Income / yr</div><div class="fmv" style="color:${p?'var(--green)':'var(--red)'}">${fmt(f.ni)}</div><div class="fms">EBITDA ${f.margin.toFixed(0)}%</div></div>
+    <div class="fm"><div class="fml">ROI</div><div class="fmv" style="color:${rc}">${f.roi.toFixed(1)}%</div><div class="fms">${f.pb?f.pb.toFixed(1)+' yr payback':'No payback'}</div></div>
+    <div class="fm"><div class="fml">10-yr Profit</div><div class="fmv" style="color:${f.yr10>0?'var(--green)':'var(--red)'}">${fmt(f.yr10)}</div><div class="fms">5-yr: ${fmt(f.yr5)}</div></div>`;
+  const sub=`${fmtN(f.nChips)} chips · ${fmtN(f.nRacks)} racks · ${f.mw} MW`;
+  const pills=`<span class="pill ${p?'pill-green':'pill-red'}">${p?'PROFITABLE':'LOSS-MAKING'}</span><span class="pill pill-blue">${f.pb?f.pb.toFixed(1)+'yr payback':'No payback'}</span>`;
+  ['2','3'].forEach(n=>{
+    const g=document.getElementById('fingrid'+n);
+    const s=document.getElementById('finsub'+n||'finsub');
+    const pp=document.getElementById('finpills'+n);
+    if(g)g.innerHTML=grid;
+    if(s)s.textContent=sub;
+    if(pp)pp.innerHTML=pills;
+  });
+  // finsub (step 2 uses id finsub)
+  const fs=document.getElementById('finsub');if(fs)fs.textContent=sub;
+  const fg=document.getElementById('fingrid');if(fg)fg.innerHTML=grid;
+  const fp=document.getElementById('finpills');if(fp)fp.innerHTML=pills;
+}
+
+function updateTopbar(f){
+  document.getElementById('pill-mw').textContent=f.mw+' MW';
+  document.getElementById('pill-chips').textContent=fmtN(f.nChips);
+  document.getElementById('pill-roi').textContent=f.roi.toFixed(1)+'%';
+  document.getElementById('pill-payback').textContent=f.pb?f.pb.toFixed(1)+'yr':'—';
+}
+
+function renderStep4(f){
+  // KPI cards
+  document.getElementById('kpi-row').innerHTML=`
+    <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Total CAPEX</div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--amber)">${fmt(f.capex)}</div>
+    </div>
+    <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Annual Revenue</div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--green)">${fmt(f.rev)}</div>
+    </div>
+    <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">ROI (unlevered)</div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:${f.roi>10?'var(--green)':f.roi>0?'var(--amber)':'var(--red)'}">${f.roi.toFixed(1)}%</div>
+    </div>
+    <div style="background:var(--ink2);border:1px solid var(--border2);padding:16px;text-align:center">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Payback Period</div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)">${f.pb?f.pb.toFixed(1)+' yrs':'N/A'}</div>
+    </div>`;
+
+  // CAPEX rows
+  const capexItems=[['Chips',f.cChip],['Construction',f.cBuild],['Land',f.cLand],['Power Infra',f.cPwr],['Cooling',f.cCool],['Networking',f.cNet],['Misc (8%)',f.cMisc]];
+  document.getElementById('capex-rows').innerHTML=capexItems.map(([l,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text2)">${l}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmt(v)}</span>
+    </div>`).join('')+`<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;font-weight:600">
+      <span>Total CAPEX</span><span style="font-family:'DM Mono',monospace;color:var(--amber)">${fmt(f.capex)}</span></div>`;
+
+  // OPEX rows
+  const opexItems=[['Power',f.oPwr],['Labor',f.oLab],['Water',f.oWat],['Network',f.oNet],['Maintenance',f.oMnt],['Insurance',f.oIns]];
+  document.getElementById('opex-rows').innerHTML=opexItems.map(([l,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text2)">${l}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmt(v)}</span>
+    </div>`).join('')+`<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;font-weight:600">
+      <span>Total OPEX</span><span style="font-family:'DM Mono',monospace;color:var(--accent)">${fmt(f.opex)}</span></div>`;
+
+  // P&L
+  const plItems=[
+    ['Revenue',f.rev,'var(--green)'],['OPEX',-f.opex,'var(--red)'],
+    ['EBITDA',f.ebitda,f.ebitda>0?'var(--green)':'var(--red)'],
+    ['Depreciation (7yr)',-f.capex/7,'var(--text2)'],
+    ['EBIT',f.ebitda-f.capex/7,(f.ebitda-f.capex/7)>0?'var(--green)':'var(--red)'],
+    ['Tax',-(Math.max(0,(f.ebitda-f.capex/7)*((S.loc?.taxRate)||0.21))),'var(--text2)'],
+    ['Net Income',f.ni,f.ni>0?'var(--green)':'var(--red)'],
+  ];
+  document.getElementById('pl-rows').innerHTML=plItems.map(([l,v,c])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text2)">${l}</span>
+      <span style="font-family:'DM Mono',monospace;color:${c}">${fmt(v)}</span>
+    </div>`).join('');
+
+  // 10yr bar chart
+  const maxVal=Math.max(1,...Array.from({length:10},(_,i)=>Math.abs(f.ni)));
+  document.getElementById('chart-bars').innerHTML=Array.from({length:10},(_,i)=>{
+    const val=f.ni;
+    const h=Math.max(4,Math.abs(val)/maxVal*100);
+    const color=val>=0?'var(--green)':'var(--red)';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">${fmt(val)}</div>
+      <div style="width:100%;height:${h}px;background:${color};opacity:${0.5+i*0.05};min-height:4px"></div>
+      <div style="font-size:9px;color:var(--text3)">Y${i+1}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Three.js ──
+let R,SC,CAM,drag=false,lmx=0,lmy=0,theta=.55,phi=1.05,camR=110,wf=false;
+const meshes=[];
+let threeInit=false;
+
+function initThree(){
+  if(threeInit)return;threeInit=true;
+  const canvas=document.getElementById('tcanvas');
+  const wrap=document.getElementById('tcwrap');
+  R=new THREE.WebGLRenderer({canvas,antialias:true});
+  R.setPixelRatio(Math.min(devicePixelRatio,2));
+  R.shadowMap.enabled=true;
+  R.setSize(wrap.clientWidth,wrap.clientHeight);
+  SC=new THREE.Scene();SC.background=new THREE.Color(0x060b14);SC.fog=new THREE.FogExp2(0x060b14,.007);
+  CAM=new THREE.PerspectiveCamera(42,wrap.clientWidth/wrap.clientHeight,.1,1000);moveCam();
+  SC.add(new THREE.AmbientLight(0x2a3d5a,1));
+  const dl=new THREE.DirectionalLight(0x8ab4d4,1.4);dl.position.set(60,80,50);dl.castShadow=true;SC.add(dl);
+  SC.add(Object.assign(new THREE.PointLight(0x3b82f6,3,90),{position:new THREE.Vector3(0,22,0)}));
+  SC.add(Object.assign(new THREE.PointLight(0x10b981,1.5,60),{position:new THREE.Vector3(20,10,-20)}));
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(400,400),new THREE.MeshLambertMaterial({color:0x08111e}));
+  gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;SC.add(gnd);
+  SC.add(new THREE.GridHelper(400,60,0x162a40,0x101e2e));
+  wrap.addEventListener('mousedown',e=>{drag=true;lmx=e.clientX;lmy=e.clientY;});
+  window.addEventListener('mouseup',()=>drag=false);
+  window.addEventListener('mousemove',e=>{if(!drag)return;theta-=(e.clientX-lmx)*.008;phi=Math.max(.25,Math.min(1.45,phi-(e.clientY-lmy)*.005));lmx=e.clientX;lmy=e.clientY;moveCam();});
+  wrap.addEventListener('wheel',e=>{camR=Math.max(35,Math.min(280,camR+e.deltaY*.12));moveCam();});
+  (function anim(){requestAnimationFrame(anim);R.render(SC,CAM);})();
+}
+
+function moveCam(){if(!CAM)return;CAM.position.set(camR*Math.sin(phi)*Math.sin(theta),camR*Math.cos(phi),camR*Math.sin(phi)*Math.cos(theta));CAM.lookAt(0,4,0);}
+
+function buildScene(f){
+  meshes.forEach(m=>SC.remove(m));meshes.length=0;
+  const nH=Math.max(1,Math.min(8,Math.ceil(f.nRacks/1000)));
+  const rpH=Math.ceil(f.nRacks/nH);
+  const hW=26,hD=56,hH=9,gap=7,totW=nH*(hW+gap)-gap,ox=-totW/2;
+  const mk=(geo,col,cast=true)=>{const m=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({color:col}));if(cast)m.castShadow=true;m.receiveShadow=true;return m;};
+  for(let i=0;i<nH;i++){
+    const hx=ox+i*(hW+gap)+hW/2;const g=new THREE.Group();
+    const body=mk(new THREE.BoxGeometry(hW,hH,hD),0x162a42);body.position.set(0,hH/2,0);g.add(body);
+    const roof=mk(new THREE.BoxGeometry(hW+.6,.7,hD+.6),0x0f1e30);roof.position.set(0,hH+.35,0);g.add(roof);
+    const win=mk(new THREE.BoxGeometry(hW-.5,.8,hD-.5),0x1a3a5c,false);win.position.set(0,hH*.6,0);g.add(win);
+    const cols=Math.min(7,Math.ceil(Math.sqrt(rpH))),rows=Math.min(7,Math.ceil(rpH/cols));
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      const rk=mk(new THREE.BoxGeometry(1.1,6.2,1.2),0x0d3265);
+      rk.position.set(-(cols*1.55)/2+c*1.55+.775,3.1,-(rows*1.85)/2+r*1.85+.925);g.add(rk);
+      const led=new THREE.Mesh(new THREE.BoxGeometry(.055,6,.04),new THREE.MeshBasicMaterial({color:0x00aaff}));
+      led.position.set(-(cols*1.55)/2+c*1.55+1.325,3.1,-(rows*1.85)/2+r*1.85+.925+.62);g.add(led);
+    }
+    g.position.set(hx,0,0);SC.add(g);meshes.push(g);
+  }
+  const cc=Math.max(2,Math.ceil(nH*1.6));
+  for(let i=0;i<cc;i++){
+    const cx=ox+(i/(cc-1||1))*totW;
+    const tower=mk(new THREE.BoxGeometry(7,6,5),0x0a3020);tower.position.set(cx,3,hD/2+5);SC.add(tower);meshes.push(tower);
+    const fan=mk(new THREE.CylinderGeometry(2,2,.6,10),0x071a10);fan.position.set(cx,6.3,hD/2+5);SC.add(fan);meshes.push(fan);
+  }
+  const sub=mk(new THREE.BoxGeometry(20,8,12),0x2a1800);sub.position.set(ox-18,4,0);SC.add(sub);meshes.push(sub);
+  for(let i=0;i<4;i++){const t=mk(new THREE.CylinderGeometry(1.2,1.3,4,8),0x3d2500);t.position.set(ox-18+(i-1.5)*4.5,4.5,-7.5);SC.add(t);meshes.push(t);}
+  for(let i=0;i<3;i++){const pole=mk(new THREE.CylinderGeometry(.2,.2,12,6),0x1a1200);pole.position.set(ox-32+i*8,6,0);SC.add(pole);meshes.push(pole);}
+  const adm=mk(new THREE.BoxGeometry(18,7,14),0x141e28);adm.position.set(totW/2-ox+14,3.5,-hD/2-9);SC.add(adm);meshes.push(adm);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(totW+80,7),new THREE.MeshLambertMaterial({color:0x08101a}));
+  road.rotation.x=-Math.PI/2;road.position.set(0,.02,hD/2+13);SC.add(road);meshes.push(road);
+  document.getElementById('cvleg').innerHTML=`
+    <div class="lgi"><div class="lgd" style="background:#162a42"></div><span class="lgl">Server Halls</span></div>
+    <div class="lgi"><div class="lgd" style="background:#0a3020"></div><span class="lgl">Cooling</span></div>
+    <div class="lgi"><div class="lgd" style="background:#2a1800"></div><span class="lgl">Substation</span></div>
+    <div class="lgi"><div class="lgd" style="background:#141e28"></div><span class="lgl">Admin</span></div>`;
+  renderFacStats(f);
+}
+
+function renderFacStats(f){
+  document.getElementById('fstats').innerHTML=`
+    <div class="fst"><div class="fstv">${fmtN(f.nChips)}</div><div class="fstl">Chips</div></div>
+    <div class="fst"><div class="fstv">${fmtN(f.nRacks)}</div><div class="fstl">Racks</div></div>
+    <div class="fst"><div class="fstv">${f.mw} MW</div><div class="fstl">IT Load</div></div>
+    <div class="fst"><div class="fstv">${f.acres} ac</div><div class="fstl">Land</div></div>`;
+}
+
+function buildFacility(){
+  const f=calcF();if(!f)return;
+  goStep(3);
+  document.getElementById('fsub').textContent=`${fmtN(f.nRacks)} racks · ${f.mw}MW · ${S.chip.name} — drag to orbit`;
+  setTimeout(()=>{if(!threeInit)initThree();buildScene(f);},80);
+}
+function resetCam(){theta=.55;phi=1.05;camR=110;moveCam();}
+function toggleWF(){wf=!wf;SC.traverse(o=>{if(o.isMesh&&o.material)o.material.wireframe=wf;});}
+
+// ── Step navigation ──
+function goStep(n){
+  S.step=n;
+  document.querySelectorAll('.step').forEach((el,i)=>el.classList.toggle('active',i+1===n));
+  document.querySelectorAll('.step-pill').forEach((el,i)=>{
     el.classList.remove('active','done');
-    if (i+1 === n) el.classList.add('active');
-    else if (i+1 < n) el.classList.add('done');
+    if(i+1===n)el.classList.add('active');
+    else if(i+1<n)el.classList.add('done');
   });
-  if (n === 3) initThreeJS();
+  if(n>=2){
+    initBgMaps();
+    const f=calcF();
+    if(f){updateFinancePanels(f);updateTopbar(f);}
+    document.getElementById('cfg-sub').textContent=S.loc?S.loc.name+' selected':'Select a location first';
+  }
+  if(n===4){const f=calcF();if(f)renderStep4(f);}
 }
 
-// ─── Three.js (Step 3 — from Phase 1, preserved) ─────────────────────────────
-let threeInit = false;
-function initThreeJS() {
-  if (threeInit) return;
-  threeInit = true;
-  // Placeholder — insert Phase 1 Three.js scene here
-}
-
-// ─── Data loading ─────────────────────────────────────────────────────────────
-async function loadData() {
-  // Load markets and projects in parallel
-  const [marketsRes, projectsRes] = await Promise.allSettled([
-    fetch('/api/markets').then(r => r.json()),
-    fetch('/api/pipeline').then(r => r.json()),
+// ── Data loading ──
+async function loadData(){
+  const [mr,pr]=await Promise.allSettled([
+    fetch('/api/markets').then(r=>r.json()),
+    fetch('/api/pipeline').then(r=>r.json()),
   ]);
-
-  // Markets
-  if (marketsRes.status === 'fulfilled' && marketsRes.value?.markets) {
-    STATE.marketsData = marketsRes.value;
-    const liveCount = marketsRes.value.meta?.liveMarkets || 0;
-    document.getElementById('live-status').textContent =
-      `${liveCount} live prices · ${marketsRes.value.meta?.count} markets`;
-    document.getElementById('live-dot').style.background =
-      liveCount > 0 ? 'var(--accent3)' : 'var(--amber)';
+  if(mr.status==='fulfilled'&&mr.value?.markets){
+    S.marketsData=mr.value;
+    const live=mr.value.meta?.liveMarkets||0;
+    document.getElementById('live-status').textContent=`${live} live prices · ${mr.value.meta?.count} markets`;
+    document.getElementById('live-dot').style.background=live>0?'var(--accent3)':'var(--amber)';
     renderMarketList();
     renderMarketMarkers();
-  } else {
-    document.getElementById('live-status').textContent = 'Using baseline data';
-    document.getElementById('live-dot').style.background = 'var(--amber)';
-    renderMarketMarkers(); // renders with placeholders
-    // Show skeleton → basic list fallback
-    document.getElementById('market-skeleton').style.display = 'none';
-    const list = document.getElementById('market-items');
-    list.style.display = 'block';
-    list.innerHTML = HOTSPOTS.map((h,i) => `
-      <div class="market-item" data-id="${h.id}" onclick="onMarketClick('${h.id}')">
-        <div class="mi-top">
-          <span class="mi-rank">#${i+1}</span>
-          <span class="mi-name">${h.name}</span>
-        </div>
+  }else{
+    document.getElementById('live-status').textContent='Baseline data';
+    renderMarketMarkers();
+    document.getElementById('market-skeleton').style.display='none';
+    const list=document.getElementById('market-items');
+    list.style.display='block';
+    list.innerHTML=HOTSPOTS.map((h,i)=>`
+      <div class="market-item" data-id="${h.id}" onclick="onHotspotClick('${h.id}')">
+        <div class="mi-top"><span class="mi-rank">#${i+1}</span><span class="mi-name">${h.name}</span></div>
       </div>`).join('');
   }
-
-  // Projects
-  if (projectsRes.status === 'fulfilled' && projectsRes.value?.features) {
-    STATE.projectsData = projectsRes.value;
+  if(pr.status==='fulfilled'&&pr.value?.features){
+    S.projectsData=pr.value;
     renderProjectMarkers();
-    const count = projectsRes.value.features.length;
-    // Add count badge to pipeline button
-    document.getElementById('ctrl-projects').textContent = `Projects (${count})`;
+    document.getElementById('ctrl-projects').textContent=`Projects (${pr.value.features.length})`;
   }
 }
 
-function onMarketClick(id) {
-  if (STATE.marketsData) {
-    const market = STATE.marketsData.markets.find(m => m.id === id);
-    if (market) showMarketCard(market);
-  }
+// ── Grid Intelligence ──
+let gridPanelOpen = false;
+let gridDataCache = {};
+let currentGridTarget = null;
+
+function toggleGridPanel() {
+  gridPanelOpen = !gridPanelOpen;
+  document.getElementById('grid-panel-body').style.display = gridPanelOpen ? 'block' : 'none';
+  document.getElementById('grid-toggle-btn').textContent = gridPanelOpen ? 'Hide ↑' : 'Show ↓';
+  if (gridPanelOpen && currentGridTarget) loadGridData(currentGridTarget);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-renderMarketMarkers(); // instant placeholder markers
-loadData();            // async data enrichment
+async function loadGridData(target) {
+  const cacheKey = typeof target === 'string' ? target : `${target.lat.toFixed(2)}_${target.lng.toFixed(2)}`;
+  document.getElementById('grid-loading').style.display = 'block';
+  document.getElementById('grid-content').innerHTML = '';
+  if (gridDataCache[cacheKey]) { renderGridPanel(gridDataCache[cacheKey]); return; }
+  try {
+    const url = typeof target === 'string'
+      ? `/api/grid?market=${target}`
+      : `/api/grid?lat=${target.lat}&lng=${target.lng}&country=${target.country||'XX'}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    gridDataCache[cacheKey] = data;
+    renderGridPanel(data);
+  } catch { document.getElementById('grid-loading').textContent = 'Grid data unavailable'; }
+}
+
+function renderGridPanel(d) {
+  document.getElementById('grid-loading').style.display = 'none';
+  const mix = d.powerMix || {};
+  const mixTotal = Object.values(mix).reduce((a,v) => a+v, 0);
+  const mixColors = {solar:'#f59e0b',wind:'#06c8d4',hydro:'#2d7ff9',nuclear:'#7c3aed',gas:'#6b7280',coal:'#374151',other:'#4b5563'};
+  const liveFlag = d.liveSignals?.length > 0 ? `<span class="grid-live-badge">● ${d.liveSignals.join('+')}</span>` : '';
+  const gc = v => v >= 60 ? 'var(--accent3)' : v >= 35 ? 'var(--amber)' : 'var(--red)';
+  const cc = v => v <= 100 ? 'var(--accent3)' : v <= 350 ? 'var(--text)' : v <= 550 ? 'var(--amber)' : 'var(--red)';
+  const hc = v => v >= 1000 ? 'var(--accent3)' : v >= 400 ? 'var(--amber)' : 'var(--red)';
+  const fmtMw = v => v >= 1000 ? (v/1000).toFixed(1)+'GW' : v+'MW';
+  const qc = v => v > 30 ? 'red' : v > 15 ? 'amber' : 'green';
+  const tc = v => v==='excellent'?'green':v==='good'?'':v==='fair'?'amber':'red';
+  const rc = v => v==='low'?'green':v==='medium'?'amber':'red';
+  document.getElementById('grid-content').innerHTML = `
+    <div class="grid-kpi-row">
+      <div class="grid-kpi"><div class="grid-kpi-val" style="color:${gc(d.renewablesPct)}">${d.renewablesPct}%${liveFlag}</div><div class="grid-kpi-label">Renewable</div></div>
+      <div class="grid-kpi"><div class="grid-kpi-val" style="color:${cc(d.carbonIntensity)}">${d.carbonIntensity}</div><div class="grid-kpi-label">gCO₂/kWh</div></div>
+      <div class="grid-kpi"><div class="grid-kpi-val" style="color:${hc(d.gridHeadroomMw)}">${fmtMw(d.gridHeadroomMw)}</div><div class="grid-kpi-label">Headroom</div></div>
+    </div>
+    ${mixTotal > 0 ? `<div class="grid-mix-bar">
+      <div class="grid-mix-label"><span>Power mix</span><span style="color:var(--accent3)">${d.renewables2030}% target 2030</span></div>
+      <div class="grid-mix-track">${Object.entries(mix).filter(([,v])=>v>0).map(([k,v])=>`<div class="grid-mix-seg" style="width:${(v/mixTotal*100).toFixed(1)}%;background:${mixColors[k]||'#666'}" title="${k}:${v}%"></div>`).join('')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${Object.entries(mix).filter(([,v])=>v>0).map(([k,v])=>`<span style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px"><span style="width:6px;height:6px;border-radius:1px;background:${mixColors[k]||'#666'};display:inline-block"></span>${k} ${v}%</span>`).join('')}</div>
+    </div>` : ''}
+    <div>
+      <div class="grid-detail-row"><span class="grid-detail-label">PPA available</span><span class="grid-detail-val"><span class="ppa-pill ${d.ppaAvailable?'ppa-yes':'ppa-no'}">${d.ppaAvailable?'YES':'NO'}</span>${d.ppaAvailable&&d.ppaMinMw?`<span style="font-size:9px;color:var(--text3);margin-left:4px">min ${d.ppaMinMw}MW</span>`:''}</span></div>
+      <div class="grid-detail-row"><span class="grid-detail-label">Queue backlog</span><span class="grid-detail-val ${qc(d.queueBacklogGw)}">${d.queueBacklogGw}GW pending</span></div>
+      <div class="grid-detail-row"><span class="grid-detail-label">Utility</span><span class="grid-detail-val" style="font-size:10px">${d.utilityName}</span></div>
+      <div class="grid-detail-row"><span class="grid-detail-label">DC track record</span><span class="grid-detail-val ${tc(d.utilityDCTrack)}">${d.utilityDCTrack}</span></div>
+      <div class="grid-detail-row"><span class="grid-detail-label">Grid risk</span><span class="grid-detail-val ${rc(d.gridRisk)}">${d.gridRisk}</span></div>
+      ${d.instantGeneration?`<div class="grid-detail-row"><span class="grid-detail-label">Live gen</span><span class="grid-detail-val" style="font-size:9px">Wind ${d.instantGeneration.windMw.toLocaleString()}MW · Solar ${d.instantGeneration.solarMw.toLocaleString()}MW</span></div>`:''}
+      <div class="grid-detail-row" style="align-items:flex-start"><span class="grid-detail-label" style="padding-top:1px">Key facts</span><span class="grid-detail-val" style="font-size:9px;line-height:1.4;color:var(--text2)">${d.notes}</span></div>
+    </div>`;
+}
+
+function showGridPanel(target) {
+  currentGridTarget = target;
+  const panel = document.getElementById('grid-panel');
+  panel.style.display = 'block';
+  if (gridPanelOpen) loadGridData(target);
+  else { document.getElementById('grid-loading').textContent = 'Click "Show ↓" to load grid intelligence'; document.getElementById('grid-loading').style.display = 'block'; document.getElementById('grid-content').innerHTML = ''; }
+}
+
+// ── Grid Intelligence Panel ──────────────────────────────────────────────
+
+let gridPanelOpen = false;
+let lastGridMarketId = null;
+
+function toggleGridPanel() {
+  gridPanelOpen = !gridPanelOpen;
+  document.getElementById('sc-grid-toggle').classList.toggle('open', gridPanelOpen);
+  document.getElementById('sc-grid-body').classList.toggle('open', gridPanelOpen);
+}
+
+async function loadGridData(marketId, lat, lng, countryCode) {
+  const panel = document.getElementById('sc-grid-panel');
+  const loading = document.getElementById('sc-grid-loading');
+  const content = document.getElementById('sc-grid-content');
+  panel.style.display = 'block';
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  if (marketId && marketId === lastGridMarketId) {
+    loading.style.display = 'none'; content.style.display = 'block'; return;
+  }
+  lastGridMarketId = marketId;
+  try {
+    let url = '/api/grid?';
+    if (marketId) url += `market=${marketId}`;
+    else url += `lat=${(lat||0).toFixed(4)}&lng=${(lng||0).toFixed(4)}&country=${countryCode||'US'}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error();
+    const g = await r.json();
+    if (!g.available) { loading.textContent = 'Grid data unavailable for this location'; return; }
+    renderGridPanel(g);
+    loading.style.display = 'none'; content.style.display = 'block';
+  } catch { loading.textContent = 'Could not load grid data'; }
+}
+
+function renderGridPanel(g) {
+  const content = document.getElementById('sc-grid-content');
+  const mixColors = {solar:'#f5a623',wind:'#06c8d4',hydro:'#2d7ff9',nuclear:'#7F77DD',gas:'#888780',coal:'#3e3e3e',other:'#4a5568'};
+  const total = Object.values(g.mix).reduce((a,b)=>a+b,0);
+  const mixBar = Object.entries(g.mix).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1])
+    .map(([k,v])=>`<div class="mix-seg" style="width:${(v/total*100).toFixed(1)}%;background:${mixColors[k]||'#666'}" title="${k}: ${v}%"></div>`).join('');
+  const mixLegend = Object.entries(g.mix).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,4)
+    .map(([k,v])=>`<span style="display:inline-flex;align-items:center;gap:3px;margin-right:8px;font-size:9px;color:var(--text3)"><span style="width:6px;height:6px;border-radius:1px;background:${mixColors[k]||'#666'};display:inline-block"></span>${k} ${v}%</span>`).join('');
+  const stressBadge = {low:'<span class="gstat-badge badge-good">LOW STRESS</span>',medium:'<span class="gstat-badge badge-warn">MODERATE</span>',high:'<span class="gstat-badge badge-bad">HIGH STRESS</span>'}[g.gridStress]||'';
+  const ppaIcons = {excellent:'✅',good:'🟡',limited:'⚠️',none:'❌'};
+  const ciColor = g.carbonIntensity<100?'#0fffa0':g.carbonIntensity<300?'#06c8d4':g.carbonIntensity<500?'#f5a623':'#ef4444';
+  const queueBadge = g.queueBacklogMw>50000?'<span class="gstat-badge badge-bad">SEVERE</span>':g.queueBacklogMw>20000?'<span class="gstat-badge badge-warn">CONGESTED</span>':'<span class="gstat-badge badge-good">MANAGEABLE</span>';
+  const subBadge = {excellent:'<span class="gstat-badge badge-good">EXCELLENT</span>',good:'<span class="gstat-badge badge-info">GOOD</span>',poor:'<span class="gstat-badge badge-bad">POOR</span>'}[g.substationAccess]||'';
+  const relColor = g.saidiHours<1?'#0fffa0':g.saidiHours<5?'#06c8d4':g.saidiHours<20?'#f5a623':'#ef4444';
+  const emberBadge = g.liveSignals?.ember?'<span class="live-badge"><span class="live-dot-sm"></span>LIVE</span>':'<span class="static-badge">baseline</span>';
+  const wattBadge = g.liveSignals?.wattTime?'<span class="live-badge"><span class="live-dot-sm"></span>REAL-TIME</span>':'';
+  const renPct = Math.min(100, (g.renewablesPct/Math.max(1,g.renewables2030Target)*100)).toFixed(0);
+
+  content.innerHTML = `
+    <div class="utility-row" style="margin-top:4px">Operator: <span>${g.utility}</span>
+      ${g.dcFriendlyUtility?'<span class="dc-friendly" style="margin-left:6px;font-size:9px">● DC-friendly</span>':'<span class="dc-unfriendly" style="margin-left:6px;font-size:9px">● Difficult for DCs</span>'}
+    </div>
+    <div class="mix-bar-wrap" style="margin-top:8px">
+      <div class="mix-bar-label"><span>Generation mix</span><span style="color:var(--accent3)">${g.renewablesPct}% renewable ${emberBadge}</span></div>
+      <div class="mix-bar">${mixBar}</div>
+      <div style="margin-top:4px">${mixLegend}</div>
+    </div>
+    <div class="ren-progress">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3)">
+        <span>2030 target: ${g.renewables2030Target}%</span>
+        <span style="color:${g.renewablesGap>20?'#f5a623':'#0fffa0'}">${g.renewablesGap>0?g.renewablesGap+'% gap':'✓ On track'}</span>
+      </div>
+      <div class="ren-track"><div class="ren-fill" style="width:${renPct}%;background:${renPct>80?'#0fffa0':'#f5a623'}"></div></div>
+    </div>
+    <div class="gstat"><span class="gstat-label">Carbon intensity</span><span class="gstat-val" style="color:${ciColor}">${g.carbonIntensity} gCO₂/kWh ${wattBadge}</span></div>
+    <div class="gstat"><span class="gstat-label">Grid headroom</span><span class="gstat-val">${g.gridHeadroomMw.toLocaleString()} MW available</span></div>
+    <div class="gstat"><span class="gstat-label">Grid stress</span><span class="gstat-val">${stressBadge}</span></div>
+    <div class="gstat"><span class="gstat-label">Connect. queue</span><span class="gstat-val">${(g.queueBacklogMw/1000).toFixed(0)}GW backlog ${queueBadge}</span></div>
+    <div class="gstat"><span class="gstat-label">Substation access</span><span class="gstat-val">${subBadge}</span></div>
+    <div class="gstat"><span class="gstat-label">Grid reliability</span><span class="gstat-val" style="color:${relColor}">${g.reliability}% · ${g.saidiHours}h outage/yr</span></div>
+    <div style="font-size:9px;color:var(--text3);padding:4px 0;line-height:1.4;border-top:1px solid rgba(255,255,255,.03);margin-top:2px">${g.queueNote}</div>
+    ${g.gridStressNote?`<div style="font-size:9px;color:var(--text3);padding:3px 0;line-height:1.4">${g.gridStressNote}</div>`:''}
+    <div class="ppa-row">
+      <div class="ppa-icon">${ppaIcons[g.ppaRating]||'—'}</div>
+      <div class="ppa-text"><div class="ppa-rating">${g.ppaRating.charAt(0).toUpperCase()+g.ppaRating.slice(1)} PPA availability</div>${g.ppaNote}</div>
+    </div>
+    <div style="background:rgba(239,68,68,0.06);border-left:2px solid rgba(239,68,68,0.3);padding:6px 8px;margin-top:6px;font-size:9px;color:var(--text2);line-height:1.4">
+      <span style="color:#ef4444;font-weight:600">Key risk: </span>${g.keyRisk}
+    </div>`;
+}
+
+// Patch showMarketCard to also load grid data
+const _origShowMarketCard = typeof showMarketCard !== 'undefined' ? showMarketCard : null;
+function showMarketCardWithGrid(market) {
+  if (_origShowMarketCard) _origShowMarketCard(market);
+  loadGridData(market.id, market.lat, market.lng, market.country);
+}
+
+const _origRenderPinCard = typeof renderPinCard !== 'undefined' ? renderPinCard : null;
+function renderPinCardWithGrid(data, lat, lng) {
+  if (_origRenderPinCard) _origRenderPinCard(data, lat, lng);
+  loadGridData(null, lat, lng, data.countryCode);
+}
+
+// ── Boot ──
+window.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  initChipGrid();
+  initSliders();
+  loadData();
+});
 </script>
 </body>
 </html>
