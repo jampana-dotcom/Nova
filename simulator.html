@@ -828,8 +828,8 @@ function showMarketCard(market){
     .map(h=>`<div class="sig-row"><span class="sig-label">${h}</span></div>`).join('');
 
   showNearbyProjects(market.lat,market.lng);
-  showGridPanel(market.id);.forEach(el=>el.classList.remove('selected'));
-  const li=document.querySelector(`[data-id="${market.id}"]`);
+loadGridData(market.id, market.lat, market.lng, market.country);
+document.querySelectorAll('.market-item').forEach(el=>el.classList.remove('selected'));  const li=document.querySelector(`[data-id="${market.id}"]`);
   if(li){li.classList.add('selected');li.scrollIntoView({behavior:'smooth',block:'nearest'});}
   map.panTo([market.lat,market.lng],{animate:true,duration:.5});
   document.getElementById('score-card').classList.add('visible');
